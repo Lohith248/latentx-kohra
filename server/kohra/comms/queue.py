@@ -42,7 +42,7 @@ def enqueue(state: State, world: World, rng: Rng, *, sender: str, to: str, net: 
         text, phrasing = render(kind, fields, phrasing, rng.reports)
     ns = state.nets[net]
     extra = ns.delay_extra if state.tick < ns.delay_until else 0.0
-    handling = world.scenario.comms.handling_delay_s[precedence]  # type: ignore[index]
+    handling = world.scenario.comms.handling_delay_s[precedence]
     state.msg_seq += 1
     m = Message(
         seq=state.msg_seq, msg_id=new_msg_id(state, rng), net=net, sender=sender, to=to, kind=kind,

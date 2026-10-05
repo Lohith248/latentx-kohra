@@ -142,7 +142,8 @@ def cmd_run(a: argparse.Namespace) -> int:
     warn_hashseed()
     speed = None if a.speed == "max" else float(a.speed)
     app = create_app(a.scenario, speed=speed, host=a.host, port=a.port, log_path=a.log,
-                     bot=a.bot, injects=a.injects, seed=a.seed, ticks=a.ticks, replay_at_endex=a.replay)
+                     bot=a.bot, injects=a.injects, seed=a.seed, ticks=a.ticks, replay_at_endex=a.replay,
+                     tokens_path=Path(a.tokens) if a.tokens else TOKENS)
     uvicorn.run(app, host=a.host, port=a.port, log_level="warning")
     return 0
 
@@ -163,6 +164,7 @@ def main(argv: list[str] | None = None) -> int:
     r.add_argument("--seed", type=int)
     r.add_argument("--ticks", type=int)
     r.add_argument("--replay", action="store_true", help="replay the log at ENDEX and print REPLAY OK")
+    r.add_argument("--tokens", help="where to write the run-time tokens (default .kohra/tokens.json)")
     r.set_defaults(func=cmd_run)
 
     h = sub.add_parser("headless", help="run as fast as possible without a browser")
