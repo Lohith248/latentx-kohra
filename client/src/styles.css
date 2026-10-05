@@ -1,0 +1,56 @@
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; margin: 0; }
+body { font: 13px/1.35 system-ui, -apple-system, "Segoe UI", sans-serif; color: #1d2318; background: #f3f2ec; }
+.mono, code { font-family: ui-monospace, Consolas, monospace; }
+.play, .ds { display: flex; flex-direction: column; height: 100%; }
+.topbar { display: flex; gap: 14px; align-items: center; padding: 6px 12px; background: #2b3324; color: #eef0e6; flex-wrap: wrap; }
+.topbar .title { font-weight: 600; }
+.topbar .clock { font: 600 18px ui-monospace, Consolas, monospace; background: #11160e; padding: 1px 8px; border-radius: 4px; }
+.topbar .classif { font-size: 11px; letter-spacing: .04em; color: #d9e08f; border: 1px solid #6f7449; padding: 1px 6px; }
+.synthetic { background: #b3261e; color: #fff; padding: 2px 8px; font-weight: 700; letter-spacing: .05em; }
+.heard { display: flex; gap: 10px; margin-left: auto; font-size: 12px; }
+.heard-item b { font-family: ui-monospace, Consolas, monospace; font-weight: 600; color: #ffd67a; }
+.endex-banner { background: #1f3a5c; color: #fff; padding: 6px 12px; font-weight: 600; }
+.endex-banner.warn { background: #8a5a00; }
+.endex-banner code { background: rgba(255,255,255,.15); padding: 1px 6px; }
+.endex { background: #1f3a5c; padding: 2px 8px; }
+.play-body { flex: 1; display: flex; min-height: 0; }
+.map { flex: 1; min-width: 0; position: relative; }
+.radio { width: 44%; max-width: 720px; display: flex; flex-direction: column; border-left: 1px solid #c7c9b8; background: #fbfbf7; }
+.radio h2 { margin: 0; padding: 6px 10px; font-size: 13px; background: #e6e7dc; }
+.radio-scroll { overflow: auto; flex: 1; }
+.radio table { border-collapse: collapse; width: 100%; font-size: 12px; }
+.radio th { position: sticky; top: 0; background: #f0f1e8; text-align: left; padding: 3px 4px; font-weight: 600; }
+.radio td { padding: 3px 4px; border-bottom: 1px solid #eceee3; vertical-align: top; white-space: nowrap; }
+.radio td.text { white-space: normal; }
+.radio tr.out td { color: #39507a; background: #f2f5fb; }
+.radio td.text { width: 60%; }
+.prec { font-size: 10px; padding: 0 4px; border-radius: 3px; background: #ddd; }
+.prec-FLASH { background: #b3261e; color: #fff; }
+.prec-IMMEDIATE { background: #e07a00; color: #fff; }
+.prec-PRIORITY { background: #2f6d9e; color: #fff; }
+.grade { font: 600 11px ui-monospace, Consolas, monospace; background: #303a26; color: #fff; padding: 0 5px; border-radius: 3px; }
+.partial { margin-left: 6px; font-size: 10px; font-weight: 700; color: #fff; background: #8c2f9e; padding: 0 4px; border-radius: 3px; }
+.orders { border-top: 1px solid #c7c9b8; background: #ecede3; padding: 8px 12px; }
+.orders fieldset { display: flex; gap: 12px; align-items: flex-end; border: 0; padding: 0; margin: 0; flex-wrap: wrap; }
+.orders label { display: flex; flex-direction: column; gap: 2px; font-size: 11px; font-weight: 600; color: #4a5040; }
+.orders label.grow { flex: 1; min-width: 240px; }
+.orders select, .orders input[type=text], .orders button { font: inherit; padding: 4px 6px; }
+.orders button.picking { background: #ffe08a; }
+.confidence.unset { color: #b3261e; }
+.confidence.unset input[type=range] { opacity: .45; }
+.relied span { font-weight: 400; }
+.send { background: #2b6b2b; color: #fff; border: 0; padding: 6px 18px !important; border-radius: 4px; font-weight: 700; }
+.send:disabled { background: #9aa08f; cursor: not-allowed; }
+.sent { display: flex; gap: 16px; margin-top: 6px; font-size: 12px; flex-wrap: wrap; min-height: 18px; }
+.needs { color: #8a5a00; }
+.rejected { color: #b3261e; font-weight: 600; }
+.ds-body { flex: 1; display: flex; min-height: 0; }
+.ds-side { width: 360px; overflow: auto; padding: 8px 12px; background: #fbfbf7; border-left: 1px solid #c7c9b8; }
+.ds-side h3 { font-size: 13px; margin: 8px 0 4px; }
+.ds-side .links td { padding: 2px 6px; }
+.events { padding-left: 18px; margin: 0; font-size: 12px; }
+.events .detail { color: #555; }
+.fatal { padding: 40px; font-size: 16px; color: #b3261e; }
+.popup-head { font-weight: 600; margin-bottom: 4px; }
+.maplibregl-ctrl-attrib { font-size: 10px; max-width: 70%; }
