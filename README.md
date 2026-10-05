@@ -2,7 +2,7 @@
 
 **A fog-of-war trainer that separates what jamming cost from what the commander missed.**
 
-Team LatentX (IIIT Bangalore) · Smart India Hackathon 2026 · Problem statement **SIH26248**, Ministry of Defence (Defence Services Staff College): an immersive multi-domain decision-making trainer for degraded communication environments.
+Team Latent_X (IIIT Bangalore) · Smart India Hackathon 2026 · Problem statement **SIH26248**, Ministry of Defence (Defence Services Staff College): an immersive multi-domain decision-making trainer for degraded communication environments.
 
 > **ILLUSTRATIVE · UNCLASSIFIED · FICTIONAL NAMES.** This is a training aid, not a validated RF or combat model.
 
@@ -15,12 +15,13 @@ KOHRA puts a company commander in a 12-minute vignette where information is **in
 - **Hidden truth.** A seeded, deterministic simulation runs on real terrain: Copernicus elevation plus OpenStreetMap, in an interior box in peninsular India. Every place name is a fictional codename.
 - **Imperfect sensing.** Platoons see the enemy only within range and line of sight. What they see becomes templated radio reports (CONTACT, LOCSTAT, SITREP, …), each graded for reliability and credibility (A–F × 1–6).
 - **Degraded comms, from physics.** Messages travel over simulated VHF nets. Whether a message arrives depends on terrain (hills block signals) and on where enemy jammers are. Messages can arrive late, garbled, or not at all.
-- **The commander sees only what arrives.** Enemy contacts carry an age and a grade. Own platoons appear only when they report their position. "Last heard" timers show who has gone silent. **Every order must state a confidence and the reports it relied on.**
-- **The instructor fights back live.** The instructor can drop or move a jammer, cut or delay a net, plant a false report, or start GPS spoofing, all mid-exercise. A read-only truth view (`/ds`) shows what is really happening.
+- **The commander sees only what arrives.** Enemy contacts carry an age and a grade. Own platoons appear only when they report their position. "Last heard" timers show who has gone silent. **Every order must state a confidence and the reports it relied on**, and can carry a one-line rationale.
+- **The instructor runs the exercise live.** From the Directing Staff view (`/ds`) the instructor starts, pauses or speeds up the exercise and, mid-exercise, places or moves a jammer on the map, cuts or delays a net, plants a false report, or starts GNSS spoofing. The same view shows ground truth and every trainee decision as it is made: the order, the stated confidence, the reports cited (flagged if planted) and the rationale.
+- **After-action review.** At ENDEX the run log becomes a debrief page: the decision log with confidence, cited reports and rationale; reports lost to jamming, by phase and cause; response times after decision points; and fire-mission outcomes. It separates what the jamming cost from what the commander missed.
 - **Replay.**
   - Every command is logged in a tamper-evident, hash-chained log.
   - Replaying the log reproduces the exact same state hashes, including the final one.
-  - So an after-action review always shows what really happened.
+  - So the after-action review always shows what really happened, and re-verifies both on every build.
 
 ## Quick start (about 10 minutes)
 
@@ -54,11 +55,15 @@ On the first run, `demo.py`:
 
 Open the DS URL in a second window, placed side by side with the player screen. If the download is blocked, the demo falls back to synthetic terrain and shows a red banner.
 
+At ENDEX the terminal prints `REPLAY OK <hash>` and the path of the after-action review (`runs/<log>.aar.html`). The server keeps running for the debrief: open **After-action review** in the DS view, then press Ctrl+C.
+
 Options:
 
 ```bash
-uv run python scripts/demo.py --speed 2                    # 1x to 4x real time
-uv run python scripts/demo.py --headless --speed max       # no browser: bot player, ~1 s, prints REPLAY OK
+uv run python scripts/demo.py --speed 2                    # 1x to 4x real time (the DS view can change it live)
+uv run python scripts/demo.py --start-paused               # hold the clock at 06:00 until the DS presses Start
+uv run python scripts/demo.py --exit-at-endex              # stop after REPLAY OK instead of serving the debrief
+uv run python scripts/demo.py --headless --speed max       # no browser: bot player, ~1 s, prints REPLAY OK, writes the AAR
 uv run python scripts/demo.py --port 8800                  # if 8765 is busy
 ```
 
@@ -68,13 +73,16 @@ The game clock runs 06:00 to 06:12. Instructor injects fire automatically, from 
 
 | Clock | What happens | Where to look |
 | --- | --- | --- |
-| 06:00 | Battalion HQ (ANVIL) orders TIGER to secure Ford OSPREY | Radio log |
+| 06:00 | Battalion HQ (ANVIL) orders TIGER to secure Ford OSPREY; the platoons report their positions | Radio log, map |
 | 06:00–06:04 | You move platoons: pick a platoon and an order, click the map, **set confidence**, choose the reports you relied on, Send. Send stays disabled until all of these are set | Orders panel |
 | ~06:03 | Enemy contacts appear from platoon reports, each with an age and a grade | Map, radio log |
 | **06:04** | **A jammer drops in among the company.** Company-net links turn red in the DS view; on the player screen, WILCOs stop arriving and "last heard" timers climb | DS view, top bar |
 | **06:05:30** | **A planted INTSUM graded C3** reports a tank platoon at TAMARIND. It is false | Radio log (C3 badge) |
 | **06:08** | The jammer moves behind KESTREL Ridge and the net recovers | DS link lines turn green |
 | 06:12 | ENDEX: inputs lock, the final state hash appears, and the terminal prints `REPLAY OK <hash>` | Player screen, terminal |
+| After ENDEX | The after-action review: decisions with confidence, cited reports and rationale; reports lost to jamming; response times | DS view, **After-action review** |
+
+The injects above come from `scenarios/demo_injects.yaml`. The instructor can add more at any time from the DS view.
 
 | Player screen | Instructor truth view |
 | --- | --- |
@@ -85,7 +93,14 @@ All ten screenshots are in [`docs/screenshots/`](docs/screenshots/).
 
 ## Run as the instructor
 
-With the demo or server running, open a second terminal in the repo folder and use any of these:
+**From the DS view (`/ds`):**
+
+- **Start / Pause / Resume** and **Speed** (1x to 8x) in the top bar. Pausing holds the wall clock only; the run still replays exactly.
+- **Injects** panel: **Place jammer** (then click the map), **Move** or **Remove** an existing jammer, **Cut** or **Delay** a net, **Spoof GNSS** (click the map), and **Planted report** (INTSUM or CONTACT, sender, size, unit type, place, direction, grade).
+- **Trainee decisions**: every order as it is made, with its confidence, the reports cited (planted ones flagged) and the rationale.
+- **After-action review** appears in the top bar at ENDEX.
+
+**From a terminal**, with the demo or server running, open a second terminal in the repo folder and use any of these:
 
 ```bash
 uv run python -m kohra.cli inject jammer_add id=J-1 lonlat=76.1467,11.2213 power_dbm=47 antenna_m=6 freq_mhz=45.25 bandwidth_khz=25 mode=continuous
@@ -100,13 +115,14 @@ uv run python -m kohra.cli inject-file scenarios/demo_injects.yaml
 
 - The CLI reads the instructor token from `.kohra/tokens.json`, which is created at server start and never committed. A player token is refused.
 - Add `at_tick=N` to schedule an inject at an absolute tick.
-- To run the server on its own: `uv run python -m kohra.cli run --speed 1`. Add `--host 0.0.0.0` for LAN play.
+- To run the server on its own: `uv run python -m kohra.cli run --speed 1`. Add `--host 0.0.0.0` for LAN play and `--start-paused` to wait for the DS.
 
-**Replay and verify a run log:**
+**Replay, verify and debrief a run log:**
 
 ```bash
 uv run python -m kohra.cli replay runs/<log>.sqlite         # REPLAY OK <hash>, or the first mismatching tick
 uv run python -m kohra.cli verify-chain runs/<log>.sqlite   # checks the SHA-256 chain
+uv run python -m kohra.cli aar runs/<log>.sqlite            # writes runs/<log>.aar.html (re-verifies chain and replay)
 ```
 
 ## How it works
@@ -134,7 +150,7 @@ uv run python -m kohra.cli verify-chain runs/<log>.sqlite   # checks the SHA-256
 ## Tests
 
 ```bash
-uv run pytest -q                                   # 157 tests
+uv run pytest -q                                   # 166 tests
 uv run mypy --strict -p kohra.sim -p kohra.comms -p kohra.reports -p kohra.observe -p kohra.log
 uv run ruff check .
 cd client && npm ci && npm test && npm run build && npx playwright install chromium && npx playwright test
@@ -148,7 +164,10 @@ Key tests:
 | `test_no_truth_leak.py` | Hidden markers on every truth unit never reach the player's connection |
 | `test_channel_stats.py` | Over 10,000 messages, the delivered share is within 5 % of the configured odds; jammer bursts have the right statistics |
 | `test_link_geometry.py` | A ridge adds about 20 dB of loss; doubling jammer distance gains 12 dB; a jammer behind a ridge loses its effect |
-| `test_orders_confidence.py`, `e2e/orders.spec.ts` | No order can be sent without a confidence and a relied-on choice |
+| `test_orders_confidence.py`, `e2e/orders.spec.ts` | No order can be sent without a confidence and a relied-on choice; a rationale is logged but never transmitted |
+| `test_aar.py` | The after-action review flags an order based on a planted report, and re-verifies the chain and the replay |
+| `test_ds_control.py`, `e2e/ds_controls.spec.ts` | Only the DS can start, pause or change speed; pausing holds the clock; a jammer placed from the map takes effect |
+| `test_opening_locstat.py` | Every platoon reports its position in the first minute |
 | `e2e/offline.spec.ts` | The map renders with **zero** requests leaving the server |
 
 Python tests need built terrain (real or synthetic); run `uv run python scripts/synth_terrain.py` once if you skipped the demo.
@@ -168,10 +187,11 @@ tests/          pytest suite (synthetic DEM fixtures)
 
 ## Roadmap
 
-- **Now:** solo vignette, terrain-aware comms, live injects, replay.
+- **Now:** solo vignette, terrain-aware comms, live injects from the DS view, start/pause/speed control, live decision feed, after-action review, replay.
 - **Next:**
   - multiplayer roles over a LAN, with player-to-player traffic through the same comms model;
-  - an instructor dashboard with an inject editor;
+  - air and cyber effects: a UAV ISR feed over its own degradable link, compromised stations;
+  - a scenario editor;
   - a **reference reader**: the best picture the received reports allowed;
   - belief freezes scored with GOSPA;
   - push-to-talk voice that garbles with link quality;
