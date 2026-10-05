@@ -29,6 +29,7 @@ class ClientOrder(_M):
     precedence: Precedence = "PRIORITY"
     confidence: StrictInt = Field(ge=0, le=100)  # required: no default (D14)
     relied_on: list[str] = Field(max_length=50)  # required, may be empty
+    rationale: str | None = Field(default=None, max_length=140, pattern=r"^[\x20-\x7E]*$")  # logged, never sent
     client_seq: int = 0
 
     @model_validator(mode="after")
@@ -188,6 +189,25 @@ class DsState(_M):
     events: list[DsEvent]
     endex: bool
     final_hash: str | None = None
+    paused: bool = False
+    speed: float = 0.0
+
+
+class DsNet(_M):
+    id: str
+    name: str
+    freq_mhz: float
+    bandwidth_khz: float
+
+
+class DsPlaceRef(_M):
+    id: str
+    name: str
+
+
+class DsStation(_M):
+    callsign: str
+    nets: list[str]
 
 
 class DsHello(_M):
@@ -202,3 +222,7 @@ class DsHello(_M):
     basemap_kind: Literal["vector", "raster"]
     start_clock: str
     duration_ticks: int
+    nets: list[DsNet] = []
+    place_ids: list[DsPlaceRef] = []
+    stations: list[DsStation] = []
+    player: str = ""

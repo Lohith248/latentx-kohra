@@ -40,7 +40,7 @@ def basemap_kind(path: Path = TILES / "basemap.pmtiles") -> str:
 def create_app(scenario_path: str, *, speed: float | None = 1.0, host: str = "127.0.0.1", port: int = 8765,
                log_path: str | None = None, bot: str | None = None, injects: str | None = None,
                seed: int | None = None, ticks: int | None = None, replay_at_endex: bool = False,
-               tokens_path: Path = TOKENS, quiet: bool = False) -> FastAPI:
+               tokens_path: Path = TOKENS, quiet: bool = False, start_paused: bool = False) -> FastAPI:
     shown = "127.0.0.1" if host in ("127.0.0.1", "0.0.0.0") else host
     url = f"http://{shown}:{port}"
     tokens = auth.issue(tokens_path, url)
@@ -58,12 +58,16 @@ def create_app(scenario_path: str, *, speed: float | None = 1.0, host: str = "12
                   flush=True)
 
     room = Room(runner, speed, basemap_kind(), Bot(load_bot(bot)) if bot else None, on_endex)
+    room.paused = start_paused
+    aar_cache: dict[str, str] = {}
 
     @contextlib.asynccontextmanager
     async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
         if not quiet:
             print(f"KOHRA {scen.title}\n  player: {url}/play?t={tokens.player}\n  DS:     {url}/ds?t={tokens.ds}\n"
                   f"  tokens: {tokens_path}\n  log:    {log}", flush=True)
+            if start_paused:
+                print("  Exercise paused: press Start in the DS view.", flush=True)
         task = asyncio.create_task(room.run())
 
         def _report(t: asyncio.Task[None]) -> None:
@@ -116,6 +120,34 @@ def create_app(scenario_path: str, *, speed: float | None = 1.0, host: str = "12
                 raise HTTPException(409, "ENDEX")
             res = runner.schedule_inject(inj, source="ds", source_id="api")
         return {"ok": True, "tick": runner.state.tick, **res}
+
+    @app.post("/api/ds/control")
+    async def _control(body: dict[str, Any], authorization: str | None = Header(default=None)) -> dict[str, Any]:
+        """Start, pause or change speed. Wall-clock only: the simulation and its replay are unaffected."""
+        if not tokens.is_ds(auth.bearer(authorization)):
+            raise HTTPException(403, "DS token required")
+        if "speed" in body and not (isinstance(body["speed"], int | float) and 0.25 <= float(body["speed"]) <= 16):
+            raise HTTPException(422, "speed must be between 0.25 and 16")
+        async with room.lock:
+            if "paused" in body:
+                room.paused = bool(body["paused"]) and not room.endex
+            if "speed" in body:
+                room.speed = float(body["speed"])
+        await room.broadcast([])
+        return {"paused": room.paused, "speed": room.speed, "tick": runner.state.tick}
+
+    @app.get("/api/ds/aar")
+    async def _aar(t: str | None = None, authorization: str | None = Header(default=None)) -> HTMLResponse:
+        """The after-action review for this run, available to the DS once the exercise has ended."""
+        if not (tokens.is_ds(t) or tokens.is_ds(auth.bearer(authorization))):
+            raise HTTPException(403, "DS token required")
+        if not room.endex:
+            raise HTTPException(409, "The after-action review is available after ENDEX")
+        if "html" not in aar_cache:
+            from kohra.reports.aar import build_aar
+
+            aar_cache["html"] = await asyncio.to_thread(build_aar, log)
+        return HTMLResponse(aar_cache["html"], headers={"Cache-Control": "no-store"})
 
     @app.websocket("/ws/play")
     async def _ws_play(ws: WebSocket) -> None:

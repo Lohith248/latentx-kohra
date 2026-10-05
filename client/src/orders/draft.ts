@@ -14,11 +14,12 @@ export interface Draft {
   reliedOn: string[];
   reliedNone: boolean;
   text: string;
+  rationale: string; // optional; logged for the debrief, never transmitted
 }
 
 export const emptyDraft = (): Draft => ({
   to: null, kind: null, grid: null, speed: "tactical", precedence: "PRIORITY", confidence: null,
-  reliedOn: [], reliedNone: false, text: "",
+  reliedOn: [], reliedNone: false, text: "", rationale: "",
 });
 
 export function kindsFor(to: string | null, bn: string): OrderKind[] {
@@ -45,9 +46,10 @@ export function toWire(d: Draft, seq: number, netFor: (to: string) => string): R
   if (d.kind === "TEXT") {
     return { type: "text", to: d.to, net: netFor(d.to!), text: d.text.trim(), precedence: d.precedence, client_seq: seq };
   }
+  const rationale = d.rationale.trim();
   return {
     type: "order", to: d.to, kind: d.kind, grid: d.kind && GRID_KINDS.includes(d.kind) ? d.grid : null,
     speed: d.kind === "MOVE" ? d.speed : null, precedence: d.precedence, confidence: d.confidence,
-    relied_on: d.reliedNone ? [] : d.reliedOn, client_seq: seq,
+    relied_on: d.reliedNone ? [] : d.reliedOn, ...(rationale ? { rationale } : {}), client_seq: seq,
   };
 }

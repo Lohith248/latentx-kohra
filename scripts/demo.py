@@ -1,11 +1,12 @@
 """One-command KOHRA M1 demo (Windows and Linux).
 
-    uv run python scripts/demo.py [--speed 1|2|4] [--no-browser]
+    uv run python scripts/demo.py [--speed 1|2|4] [--no-browser] [--start-paused] [--exit-at-endex]
     uv run python scripts/demo.py --headless --speed max
 
 Interactive: ensures terrain and the client build, starts the server (PYTHONHASHSEED=0), opens the player
 page, prints the DS URL, schedules scenarios/demo_injects.yaml through the inject CLI, and at ENDEX prints
-the final hash and replays the run log (REPLAY OK <hash>).
+the final hash, replays the run log (REPLAY OK <hash>) and writes the after-action review next to the log.
+The server then stays up for the debrief (the DS view links to the AAR) until Ctrl+C, unless --exit-at-endex.
 """
 
 from __future__ import annotations
@@ -85,14 +86,17 @@ def headless(speed: str) -> int:
     log = ROOT / "runs" / f"demo-headless-{dt.datetime.now():%Y%m%d-%H%M%S}.sqlite"
     if speed != "max":
         print("headless runs as fast as possible; --speed ignored")
-    return run([PY, "-m", "kohra.cli", "headless", "--scenario", str(SCEN), "--bot", str(BOT), "--injects",
+    code = run([PY, "-m", "kohra.cli", "headless", "--scenario", str(SCEN), "--bot", str(BOT), "--injects",
                 str(INJECTS), "--log", str(log), "--replay"])
+    if code == 0:
+        run([PY, "-m", "kohra.cli", "aar", str(log), "--no-verify"])  # replay has just been verified
+    return code
 
 
-def interactive(speed: str, port: int, browser: bool) -> int:
+def interactive(speed: str, port: int, browser: bool, start_paused: bool, exit_at_endex: bool) -> int:
     log = ROOT / "runs" / f"demo-{dt.datetime.now():%Y%m%d-%H%M%S}.sqlite"
     cmd = [PY, "-u", "-m", "kohra.cli", "run", "--scenario", str(SCEN), "--speed", speed, "--port", str(port),
-           "--log", str(log), "--replay"]
+           "--log", str(log), "--replay"] + (["--start-paused"] if start_paused else [])
     print("$", " ".join(cmd), flush=True)
     srv = subprocess.Popen(cmd, cwd=ROOT, env=env(), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
     assert srv.stdout is not None
@@ -120,6 +124,12 @@ def interactive(speed: str, port: int, browser: bool) -> int:
                 break
             if line.startswith("REPLAY MISMATCH"):
                 break
+        if code == 0:
+            run([PY, "-m", "kohra.cli", "aar", str(log), "--no-verify"])  # the server has just replayed it
+            if not exit_at_endex:
+                print(f"\nDebrief: open 'After-action review' in the DS view ({ds}).\nPress Ctrl+C to stop the server.",
+                      flush=True)
+                srv.wait()
         return code
     except KeyboardInterrupt:
         return 130
@@ -137,13 +147,15 @@ def main() -> None:
     ap.add_argument("--speed", default="1", help="1..4, or max (headless)")
     ap.add_argument("--port", type=int, default=8765)
     ap.add_argument("--no-browser", action="store_true")
+    ap.add_argument("--start-paused", action="store_true", help="hold the clock until the DS presses Start")
+    ap.add_argument("--exit-at-endex", action="store_true", help="stop the server after REPLAY OK (no debrief)")
     a = ap.parse_args()
     check_tools(need_node=not a.headless)
     ensure_terrain(interactive=not a.headless and sys.stdin.isatty())
     if a.headless:
         sys.exit(headless(a.speed))
     ensure_client()
-    sys.exit(interactive(a.speed, a.port, not a.no_browser))
+    sys.exit(interactive(a.speed, a.port, not a.no_browser, a.start_paused, a.exit_at_endex))
 
 
 if __name__ == "__main__":

@@ -2,6 +2,8 @@ import { create } from "zustand";
 import { emptyDraft, missing, toWire, type Draft } from "../orders/draft";
 import type { DsHello, DsState, OrderResult, PlayerHello, Radio, Status } from "./types";
 
+const RECONNECT_MS = 1500;
+
 export function token(): string {
   return new URLSearchParams(location.search).get("t") ?? "";
 }
@@ -9,6 +11,23 @@ export function token(): string {
 function wsUrl(path: string): string {
   const proto = location.protocol === "https:" ? "wss:" : "ws:";
   return `${proto}//${location.host}${path}?t=${encodeURIComponent(token())}`;
+}
+
+/** After a reconnect the server resends hello; keep the old object when nothing changed so the map is not rebuilt. */
+function same<T>(prev: T | null, next: T): T {
+  return prev !== null && JSON.stringify(prev) === JSON.stringify(next) ? prev : next;
+}
+
+/** POST to a DS endpoint with the DS token from the page URL. */
+export async function dsPost(path: string, body: unknown): Promise<{ ok: boolean; status: number; data: unknown }> {
+  const r = await fetch(path, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token()}` },
+    body: JSON.stringify(body),
+  });
+  let data: unknown = null;
+  try { data = await r.json(); } catch { data = null; }
+  return { ok: r.ok, status: r.status, data };
 }
 
 interface PlayerStore {
@@ -35,10 +54,15 @@ export const usePlayer = create<PlayerStore>((set, get) => ({
   connect: () => {
     const ws = new WebSocket(wsUrl("/ws/play"));
     ws.onopen = () => set({ connected: true, error: null });
-    ws.onclose = (e) => set({ connected: false, error: e.code === 4403 ? "Access refused: check the player link." : "Disconnected from server." });
+    ws.onclose = (e) => {
+      if (e.code === 4403) { set({ connected: false, error: "Access refused: check the player link." }); return; }
+      if (get().status?.endex) { set({ connected: false }); return; } // the server may stop after the exercise
+      set({ connected: false, error: "Connection lost. Reconnecting…" });
+      setTimeout(() => get().connect(), RECONNECT_MS);
+    };
     ws.onmessage = (ev) => {
       const f = JSON.parse(ev.data as string);
-      if (f.type === "hello") set({ hello: f });
+      if (f.type === "hello") set((s) => ({ hello: same(s.hello, f) }));
       else if (f.type === "history") set({ msgs: f.messages });
       else if (f.type === "radio") set((s) => ({ msgs: [...s.msgs, f] }));
       else if (f.type === "status") set({ status: f });
@@ -55,7 +79,7 @@ export const usePlayer = create<PlayerStore>((set, get) => ({
   setPicking: (v) => set({ picking: v }),
   send: () => {
     const { draft, ws, seq, hello, status } = get();
-    if (!ws || !hello || missing(draft).length || status?.endex) return;
+    if (!ws || ws.readyState !== WebSocket.OPEN || !hello || missing(draft).length || status?.endex) return;
     const netFor = (to: string) => hello.stations.find((s) => s.callsign === to)?.nets.find((n) => hello.nets.some((m) => m.id === n)) ?? "";
     ws.send(JSON.stringify(toWire(draft, seq + 1, netFor)));
     set({ seq: seq + 1, draft: { ...emptyDraft(), to: draft.to }, picking: false });
@@ -69,14 +93,20 @@ interface DsStore {
   connect: () => void;
 }
 
-export const useDs = create<DsStore>((set) => ({
+export const useDs = create<DsStore>((set, get) => ({
   hello: null, state: null, error: null,
   connect: () => {
     const ws = new WebSocket(wsUrl("/ws/ds"));
-    ws.onclose = (e) => set({ error: e.code === 4403 ? "Access refused: DS token required." : "Disconnected from server." });
+    ws.onopen = () => set({ error: null });
+    ws.onclose = (e) => {
+      if (e.code === 4403) { set({ error: "Access refused: DS token required." }); return; }
+      if (get().state?.endex) return;
+      set({ error: "Connection lost. Reconnecting…" });
+      setTimeout(() => get().connect(), RECONNECT_MS);
+    };
     ws.onmessage = (ev) => {
       const f = JSON.parse(ev.data as string);
-      if (f.type === "hello") set({ hello: f });
+      if (f.type === "hello") set((s) => ({ hello: same(s.hello, f) }));
       else if (f.type === "ds_state") set({ state: f });
     };
   },

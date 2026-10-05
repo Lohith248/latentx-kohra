@@ -1,10 +1,10 @@
 [project]
 name = "kohra"
 version = "0.1.0"
-description = "KOHRA: decision-making under uncertainty trainer (SIH26248, Team LatentX). M1 solo slice."
+description = "KOHRA: decision-making under uncertainty trainer (SIH26248, Team Latent_X). M1 solo slice."
 readme = "README.md"
 requires-python = ">=3.12,<3.13"
-license = { text = "Proprietary (private; team LatentX)" }
+license = { text = "Proprietary (private; team Latent_X)" }
 dependencies = [
     "fastapi==0.115.12",
     "uvicorn==0.34.2",

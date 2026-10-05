@@ -98,10 +98,11 @@ def _apply_command(state: State, world: World, rng: Rng, c: dict[str, Any], res:
         m = enqueue(state, world, rng, sender=player.callsign, to=to.callsign, net=net, kind=ORDER_KIND[p["kind"]],
                     fields=fields, precedence=p["precedence"], grade=None)
     res.player_msgs.append(record_sent(state, m))
-    # Confidence and relied_on are recorded here and never transmitted (D14).
+    # Confidence, relied_on and rationale are recorded here and never transmitted (D14).
     res.events.append(("order_applied", {"msg": m.msg_id, "kind": p.get("kind", "TEXT"), "to": to.callsign,
                                          "net": net, "confidence": p.get("confidence"),
-                                         "relied_on": p.get("relied_on"), "source": c["source"]}))
+                                         "relied_on": p.get("relied_on"), "rationale": p.get("rationale"),
+                                         "source": c["source"]}))
 
 
 def _expire(state: State, ev: list[tuple[str, dict[str, Any]]]) -> None:

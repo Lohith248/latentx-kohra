@@ -68,10 +68,14 @@ export function OrdersPanel() {
                 onPointerUp={(e) => set({ confidence: Number((e.target as HTMLInputElement).value) })}
                 onKeyUp={(e) => set({ confidence: Number((e.target as HTMLInputElement).value) })} />
             </label>
-            <label className="relied">
-              Relied on: {d.reliedOn.length ? `${d.reliedOn.length} message(s)` : d.reliedNone ? "none" : "—"}
+            <label className="relied" title="Tick the reports you relied on in the radio log, or choose None">
+              Relied on: {d.reliedOn.length ? `${d.reliedOn.length} message(s)` : d.reliedNone ? "none" : "tick reports in the log"}
               <span><input type="checkbox" data-testid="relied-none" checked={d.reliedNone} disabled={d.reliedOn.length > 0}
                 onChange={(e) => set({ reliedNone: e.target.checked })} /> None</span>
+            </label>
+            <label className="grow">Rationale (optional)
+              <input type="text" maxLength={140} value={d.rationale} data-testid="rationale" placeholder="Why this order, in one line"
+                onChange={(e) => set({ rationale: e.target.value.replace(/[^\x20-\x7E]/g, "") })} />
             </label>
           </>
         )}

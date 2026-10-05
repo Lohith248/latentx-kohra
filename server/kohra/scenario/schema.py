@@ -210,6 +210,7 @@ class BnScript(Strict):
 
 class StandingRules(Strict):
     locstat_every_s: int = 180
+    initial_locstat_s: int | None = None  # an opening LOCSTAT round at this tick, so the picture is not empty
     contact_cooldown_s: int = 120
     track_drop_s: int = 300
     ack_orders: bool = True

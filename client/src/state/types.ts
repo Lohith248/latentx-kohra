@@ -28,17 +28,22 @@ export interface Status {
 
 export interface OrderResult { type: "order_result"; ok: boolean; client_seq: number; reason: string | null }
 
+export interface DsNet { id: string; name: string; freq_mhz: number; bandwidth_khz: number }
+
 export interface DsHello {
   type: "hello"; role: "ds"; title: string; classification: string; places: Place[]; routes: Route[];
   bbox: [number, number, number, number]; synthetic: boolean; basemap_kind: "vector" | "raster";
-  start_clock: string; duration_ticks: number;
+  start_clock: string; duration_ticks: number; nets: DsNet[]; place_ids: { id: string; name: string }[];
+  stations: { callsign: string; nets: string[] }[]; player: string;
 }
+
+export interface DsEvent { tick: number; clock: string; kind: string; detail: Record<string, unknown> }
 
 export interface DsState {
   type: "ds_state"; tick: number; clock: string; theta_db: number;
   units: { id: string; side: string; callsign: string; sidc: string; lonlat: LonLat; strength: number; posture: string; status: string }[];
   jammers: { id: string; lonlat: LonLat; active: boolean; emitting: boolean; radius_m: number }[];
   links: { net: string; a: string; b: string; a_lonlat: LonLat; b_lonlat: LonLat; sinr_db: number }[];
-  events: { tick: number; clock: string; kind: string; detail: Record<string, unknown> }[];
-  endex: boolean; final_hash: string | null;
+  events: DsEvent[];
+  endex: boolean; final_hash: string | null; paused: boolean; speed: number;
 }
