@@ -1,0 +1,3 @@
+- {at_tick: 240, kind: jammer_add, args: {id: J-DS-1, lonlat: [76.1467, 11.2213], power_dbm: 47, antenna_m: 6, freq_mhz: 45.250, bandwidth_khz: 25, mode: continuous}}   # among the company on the south bank: COY net goes dark
+- {at_tick: 330, kind: planted_report, args: {net: BN, from_callsign: ANVIL, to_callsign: TIGER, template: intsum, phrasing: 1, fields: {size: platoon, unit_type: tank, grid_from_place: TAMARIND, direction: SW, time: auto}, grade: C3, precedence: IMMEDIATE}}
+- {at_tick: 480, kind: jammer_move, args: {id: J-DS-1, lonlat: [76.1500, 11.2750]}}   # behind KESTREL: the company net should recover

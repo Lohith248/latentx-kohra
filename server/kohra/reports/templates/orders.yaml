@@ -1,0 +1,30 @@
+# Order templates (player -> scripted stations): three phrasings per kind. {to} is the addressee,
+# {from} the sender. The precedence prosign is shown in the radio log as a tag, not in the text.
+order_move:
+  - "{to}, {from}: MOVE to GR {grid}, {speed}. Over."
+  - "{from} to {to}: move grid {grid}, speed {speed}. Over."
+  - "{to}, this is {from}. Proceed GR {grid}, {speed}. Over."
+order_halt:
+  - "{to}, {from}: HALT. Over."
+  - "{from} to {to}: halt now. Over."
+  - "{to}, this is {from}. Halt, halt. Over."
+order_hold:
+  - "{to}, {from}: HOLD and defend in place. Over."
+  - "{from} to {to}: hold present position. Over."
+  - "{to}, this is {from}. Hold, dig in. Over."
+order_observe:
+  - "{to}, {from}: OBSERVE GR {grid}. Over."
+  - "{from} to {to}: observe grid {grid}. Over."
+  - "{to}, this is {from}. Watch GR {grid}. Over."
+order_withdraw:
+  - "{to}, {from}: WITHDRAW to GR {grid}. Over."
+  - "{from} to {to}: withdraw grid {grid}. Over."
+  - "{to}, this is {from}. Fall back GR {grid}. Over."
+order_request_sitrep:
+  - "{to}, {from}: report SITREP. Over."
+  - "{from} to {to}: send your SITREP. Over."
+  - "{to}, this is {from}. SITREP, over to you. Over."
+order_fire_mission:
+  - "{to}, {from}: FIRE MISSION GR {grid}. Over."
+  - "{from} to {to}: request fire, grid {grid}. Over."
+  - "{to}, this is {from}. Fire mission, target GR {grid}. Over."

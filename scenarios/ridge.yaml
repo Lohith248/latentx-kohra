@@ -1,0 +1,125 @@
+schema_version: 1
+id: ridge
+title: "Vignette RIDGE: Ford OSPREY"
+classification_label: "ILLUSTRATIVE · UNCLASSIFIED · FICTIONAL NAMES"
+seed: 42
+tick_seconds: 1.0
+duration_ticks: 720
+start_clock: "06:00:00"
+
+terrain:
+  bbox: [76.10, 11.20, 76.30, 11.35]
+  crs_sim: "EPSG:32643"
+  terrain_file: data/terrain/terrain.npz
+  grid_origin: [76.10, 11.20]
+
+labels:
+  coy: "Company"
+  pl: "Platoon"
+  bn: "Battalion HQ"
+  contact: "CONTACT"
+  sitrep: "SITREP"
+
+places:
+  - {id: OSPREY,   kind: ford,    name: "Ford OSPREY",   lonlat: [76.1484, 11.2392], intent: "only vehicle crossing of the river inside the box"}
+  - {id: KESTREL,  kind: ridge,   name: "KESTREL Ridge", lonlat: [76.1537, 11.2666], intent: "high ground N of the ford; blocks LOS from the ford to the red assembly area near JUNIPER"}
+  - {id: HERON,    kind: hill,    name: "Pt HERON",      lonlat: [76.1525, 11.2205], intent: "OP site S of the ford with a view over it"}
+  - {id: TAMARIND, kind: village, name: "TAMARIND",      lonlat: [76.1400, 11.2140]}
+  - {id: JUNIPER,  kind: village, name: "JUNIPER",       lonlat: [76.1585, 11.2913], intent: "red assembly area, behind KESTREL from the ford"}
+  - {id: WILLOW,   kind: crossroads, name: "WILLOW X",   lonlat: [76.1350, 11.2120]}
+
+routes:
+  - id: BLUEJAY
+    name: "Route BLUEJAY"
+    kind: road
+    points: [[76.1250, 11.2030], [76.1302, 11.2027], [76.1335, 11.2108], [76.1350, 11.2120], [76.1434, 11.2181], [76.1467, 11.2213], [76.1542, 11.2278], [76.1558, 11.2311], [76.1534, 11.2343], [76.1484, 11.2392], [76.1501, 11.2449], [76.1567, 11.2514], [76.1625, 11.2563], [76.1584, 11.2668], [76.1585, 11.2913], [76.1650, 11.3000]]
+
+sensors:
+  eyes_inf: {max_range_m: 2500, base_p_per_s: 0.08, eye_height_m: 2.0, source_type: own_patrol, sigma_base_m: 50, sigma_per_km_m: 30}
+  binos_op: {max_range_m: 4000, base_p_per_s: 0.12, eye_height_m: 2.0, source_type: own_op,     sigma_base_m: 40, sigma_per_km_m: 25}
+
+movement:
+  speed_mps: {foot: 1.2, foot_fast: 1.8, vehicle_road: 8.0, vehicle_offroad: 3.0}
+  slope_impassable_deg: {foot: 35, vehicle: 25}
+  road_cost_factor: 0.5
+  pathfinding_grid_m: 90
+
+outcomes:
+  engage_range_m: {infantry: 800, apc: 1500, tank: 2500, recce: 600, hq: 300, ew: 0}
+  attrition_per_min:
+    infantry: {moving: 0.06, stationary: 0.04, dug_in: 0.02}
+    apc:      {moving: 0.10, stationary: 0.07, dug_in: 0.03}
+    tank:     {moving: 0.14, stationary: 0.10, dug_in: 0.05}
+    recce:    {moving: 0.03, stationary: 0.02, dug_in: 0.01}
+    hq:       {moving: 0.01, stationary: 0.01, dug_in: 0.005}
+  combat_ineffective_below: 30
+  fire_mission: {delay_s: 120, cep_m: 100, radius_m: 150, damage_pct: 15}
+
+comms:
+  nets:
+    - {id: COY, name: "Company net",   freq_mhz: 45.250, bandwidth_khz: 25, data_rate_bps: 1200}
+    - {id: BN,  name: "Battalion net", freq_mhz: 52.100, bandwidth_khz: 25, data_rate_bps: 1200}
+  link_model:
+    noise_figure_db: 8
+    theta_db: 6.0
+    slope_per_db: 0.7
+    extra_loss_db: 6
+    k_factor: 1.3333
+    diffraction: single_knife_edge
+    profile_step_m: 30
+    partial_band_db: 3.0
+    partial_field_drop_p: 0.5
+    overhead_bits: 400
+    preamble_s: 0.5
+  handling_delay_s: {FLASH: 0, IMMEDIATE: 2, PRIORITY: 10, ROUTINE: 30}
+  fading_overlay: {enabled: false, p: 0.02, r: 0.3, loss_bad: 0.5}
+
+sides:
+  blue:
+    units:
+      - {id: B-HQ,  callsign: TIGER,   role: coy_hq,  player_role: coy_cdr, type: hq,       echelon: company,   mobility: vehicle, sidc: "SFGPUH----E----", lonlat: [76.1370, 11.2090], radio: {power_dbm: 40, antenna_m: 4, nets: [COY, BN]}}
+      - {id: B-1PL, callsign: TIGER-1, role: platoon, type: infantry, echelon: platoon,   mobility: foot,    sidc: "SFGPUCI---D----", lonlat: [76.1450, 11.2150], radio: {power_dbm: 37, antenna_m: 2, nets: [COY]}, sensors: [eyes_inf]}
+      - {id: B-2PL, callsign: TIGER-2, role: platoon, type: infantry, echelon: platoon,   mobility: foot,    sidc: "SFGPUCI---D----", lonlat: [76.1300, 11.2180], radio: {power_dbm: 37, antenna_m: 2, nets: [COY]}, sensors: [eyes_inf]}
+      - {id: B-3PL, callsign: TIGER-3, role: platoon, type: infantry, echelon: platoon,   mobility: foot,    sidc: "SFGPUCI---D----", lonlat: [76.1545, 11.2155], radio: {power_dbm: 37, antenna_m: 2, nets: [COY]}, sensors: [eyes_inf, binos_op]}
+      - {id: B-BN,  callsign: ANVIL,   role: bn_hq,   type: hq,       echelon: battalion, mobility: vehicle, sidc: "SFGPUH----F----", lonlat: [76.1750, 11.2030], radio: {power_dbm: 43, antenna_m: 8, nets: [BN]}}
+  red:
+    units:
+      - {id: R-RECCE, role: section, type: recce,    echelon: section, mobility: vehicle, sidc: "SHGPUCR---C----", lonlat: [76.1625, 11.2563], posture: moving}
+      - {id: R-MECH,  role: platoon, type: apc,      echelon: platoon, mobility: vehicle, sidc: "SHGPUCIZ--D----", lonlat: [76.1650, 11.3000]}
+      - {id: R-INF,   role: platoon, type: infantry, echelon: platoon, mobility: foot,    sidc: "SHGPUCI---D----", lonlat: [76.1600, 11.2930]}
+      - id: R-EW
+        role: ew
+        type: ew
+        echelon: section
+        mobility: vehicle
+        sidc: "SHGPUUMSE-C----"
+        lonlat: [76.1520, 11.2880]
+        jammer: {id: J-RED-1, power_dbm: 47, antenna_m: 10, freq_mhz: 45.250, bandwidth_khz: 25, mode: intermittent, ge: {p: 0.05, r: 0.2}, active: false}
+
+red_plan:
+  - when: {at_tick: 0}
+    do: [{unit: R-RECCE, action: move, via_route: BLUEJAY, to_place: OSPREY, speed: tactical}]
+  - when: {contact: {unit: R-RECCE, within_m: 1500, los: true}}
+    do: [{unit: R-RECCE, action: halt}, {unit: R-RECCE, action: posture, value: stationary}]
+  - when: {strength_below: {unit: R-RECCE, pct: 50}}
+    do: [{unit: R-RECCE, action: withdraw, to_place: JUNIPER}]
+  - when: {at_tick: 180}
+    do: [{unit: R-INF, action: move, to_place: KESTREL, speed: tactical}, {unit: R-MECH, action: move, via_route: BLUEJAY, to: [76.1584, 11.2668]}]
+  - when: {at_tick: 420}
+    do: [{unit: R-EW, action: jammer_on, jammer: J-RED-1}]
+  - when: {at_tick: 480}
+    do: [{unit: R-MECH, action: move, via_route: BLUEJAY, to_place: OSPREY, speed: fast}]
+
+blue_script:
+  bn_hq:
+    messages:
+      - {when: {at_tick: 5},   template: frago,  fields: {task: "SECURE", place_name: "Ford OSPREY", grid_from_place: OSPREY, by_time: "0615"}, precedence: PRIORITY}
+      - {when: {at_tick: 200}, template: intsum, fields: {size: platoon, unit_type: APC, grid_from_place: JUNIPER, direction: S, time: auto}, grade: C3, precedence: PRIORITY}
+      - {when: {at_tick: 360}, template: request_sitrep, fields: {}, precedence: PRIORITY}
+  standing_rules: {locstat_every_s: 180, contact_cooldown_s: 120, track_drop_s: 300, ack_orders: true, sitrep_when_strength_below: 50, lost_comms_continue_last_order: true}
+
+decision_points:
+  - {id: DP1, when: {at_tick: 240}, describes: "Enemy recce may be at the ford. Push TIGER-1 across now, or hold and observe from Pt HERON?"}
+  - {id: DP2, when: {observed: {unit: R-MECH}}, describes: "Mechanised platoon seen moving toward the ford. Call fire, withdraw, or hold?"}
+
+injects: []
