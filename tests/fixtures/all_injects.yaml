@@ -1,0 +1,8 @@
+# Every inject kind, used by the leak and replay tests.
+- {at_tick: 60,  kind: gnss_zone_add, args: {id: G-1, lonlat: [76.1400, 11.2140], radius_m: 3000, bearing_deg: 45, rate_mps: 2, max_offset_m: 400, duration_s: 300}}
+- {at_tick: 120, kind: net_delay, args: {net: BN, extra_s: 20, duration_s: 120}}
+- {at_tick: 240, kind: jammer_add, args: {id: J-DS-1, lonlat: [76.1467, 11.2213], power_dbm: 47, antenna_m: 6, freq_mhz: 45.250, bandwidth_khz: 25, mode: intermittent, ge: {p: 0.3, r: 0.3}, duration_s: 400}}
+- {at_tick: 300, kind: net_cut, args: {net: COY, duration_s: 60}}
+- {at_tick: 330, kind: planted_report, args: {net: BN, from_callsign: ANVIL, to_callsign: TIGER, template: intsum, phrasing: 1, fields: {size: platoon, unit_type: tank, grid_from_place: TAMARIND, direction: SW, time: auto}, grade: C3, precedence: IMMEDIATE}}
+- {at_tick: 480, kind: jammer_move, args: {id: J-DS-1, lonlat: [76.1500, 11.2750]}}
+- {at_tick: 560, kind: jammer_remove, args: {id: J-DS-1}}

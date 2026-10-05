@@ -1,0 +1,38 @@
+# Report templates: three phrasings each. Terminology is provisional pending officer review.
+# Field vocabularies live in reports/parse.py (VOCAB); keep both in step.
+contact:          # SALUTE-style, from a platoon
+  - "{callsign}: CONTACT. {size} {unit_type} at GR {grid}, {activity}, seen {time}. Over."
+  - "{callsign} reports {size} enemy {unit_type}, grid {grid}, {activity} as of {time}. Over."
+  - "Contact, {callsign}. Grid {grid}. {size} x {unit_type}. Activity {activity}. Time {time}. Over."
+locstat:
+  - "{callsign}: LOCSTAT GR {grid}, {status}, time {time}. Over."
+  - "{callsign} now at grid {grid}, {status} as of {time}. Over."
+  - "Position, {callsign}. Grid {grid}. Status {status}. Time {time}. Over."
+sitrep:
+  - "{callsign}: SITREP. GR {grid}, strength {strength_pct} percent, {posture}. Enemy: {enemy_summary}. Time {time}. Over."
+  - "{callsign} sitrep: at grid {grid}, {strength_pct} percent effective, {posture}; enemy {enemy_summary}; {time}. Over."
+  - "SITREP {callsign}. Grid {grid}. Strength {strength_pct}. Posture {posture}. Enemy {enemy_summary}. Time {time}. Over."
+ack:
+  - "{callsign}: WILCO {ref}. Out."
+  - "{callsign} acknowledges {ref}, will comply. Out."
+  - "WILCO, {callsign}, ref {ref}. Out."
+say_again:
+  - "{callsign}: SAY AGAIN {ref}. Over."
+  - "{callsign} did not copy {ref}, say again. Over."
+  - "Say again {ref}, {callsign}. Over."
+frago:            # Bn HQ to the company
+  - "{callsign}: FRAGO. TIGER to {task} {place_name} at GR {grid} by {by_time}. Over."
+  - "{callsign} orders TIGER: {task} {place_name}, grid {grid}, NLT {by_time}. Over."
+  - "FRAGO from {callsign}. Task {task}. Objective {place_name}. Grid {grid}. By {by_time}. Over."
+intsum:           # Bn HQ intelligence; carries its own grade
+  - "{callsign}: INTSUM. {size} enemy {unit_type} reported at GR {grid} moving {direction} at {time}. Over."
+  - "{callsign} intelligence: {size} x {unit_type}, grid {grid}, heading {direction}, {time}. Over."
+  - "INTSUM {callsign}. {size} {unit_type}. Grid {grid}. Direction {direction}. Time {time}. Over."
+request_sitrep:
+  - "{callsign}: TIGER, send SITREP. Over."
+  - "{callsign} requests SITREP from TIGER. Over."
+  - "TIGER, {callsign}. SITREP now. Over."
+fire_status:      # fire_state: shot | rounds complete | cannot comply
+  - "{callsign}: fire mission GR {grid}, {fire_state}, time {time}. Over."
+  - "{callsign} reports {fire_state} on grid {grid} at {time}. Over."
+  - "Fire mission {callsign}. Grid {grid}. {fire_state}. Time {time}. Over."

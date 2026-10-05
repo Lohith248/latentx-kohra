@@ -1,0 +1,1360 @@
+{
+  "$defs": {
+    "Action": {
+      "additionalProperties": false,
+      "properties": {
+        "unit": {
+          "title": "Unit",
+          "type": "string"
+        },
+        "action": {
+          "enum": [
+            "move",
+            "halt",
+            "hold",
+            "posture",
+            "withdraw",
+            "jammer_on",
+            "jammer_off"
+          ],
+          "title": "Action",
+          "type": "string"
+        },
+        "to": {
+          "anyOf": [
+            {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "To"
+        },
+        "to_place": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "To Place"
+        },
+        "via_route": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Via Route"
+        },
+        "speed": {
+          "default": "tactical",
+          "enum": [
+            "tactical",
+            "fast"
+          ],
+          "title": "Speed",
+          "type": "string"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "enum": [
+                "moving",
+                "stationary",
+                "dug_in"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Value"
+        },
+        "jammer": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Jammer"
+        }
+      },
+      "required": [
+        "unit",
+        "action"
+      ],
+      "title": "Action",
+      "type": "object"
+    },
+    "BlueScript": {
+      "additionalProperties": false,
+      "properties": {
+        "bn_hq": {
+          "$ref": "#/$defs/BnScript",
+          "default": {
+            "messages": []
+          }
+        },
+        "standing_rules": {
+          "$ref": "#/$defs/StandingRules",
+          "default": {
+            "locstat_every_s": 180,
+            "contact_cooldown_s": 120,
+            "track_drop_s": 300,
+            "ack_orders": true,
+            "sitrep_when_strength_below": 50.0,
+            "lost_comms_continue_last_order": true
+          }
+        }
+      },
+      "title": "BlueScript",
+      "type": "object"
+    },
+    "BnScript": {
+      "additionalProperties": false,
+      "properties": {
+        "messages": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/ScriptMsg"
+          },
+          "title": "Messages",
+          "type": "array"
+        }
+      },
+      "title": "BnScript",
+      "type": "object"
+    },
+    "Comms": {
+      "additionalProperties": false,
+      "properties": {
+        "nets": {
+          "items": {
+            "$ref": "#/$defs/Net"
+          },
+          "title": "Nets",
+          "type": "array"
+        },
+        "link_model": {
+          "$ref": "#/$defs/LinkModel",
+          "default": {
+            "noise_figure_db": 8.0,
+            "theta_db": 6.0,
+            "slope_per_db": 0.7,
+            "extra_loss_db": 6.0,
+            "k_factor": 1.3333,
+            "diffraction": "single_knife_edge",
+            "profile_step_m": 30.0,
+            "partial_band_db": 3.0,
+            "partial_field_drop_p": 0.5,
+            "overhead_bits": 400,
+            "preamble_s": 0.5
+          }
+        },
+        "handling_delay_s": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "title": "Handling Delay S",
+          "type": "object"
+        },
+        "fading_overlay": {
+          "$ref": "#/$defs/FadingOverlay",
+          "default": {
+            "enabled": false,
+            "p": 0.02,
+            "r": 0.3,
+            "loss_bad": 0.5
+          }
+        }
+      },
+      "required": [
+        "nets"
+      ],
+      "title": "Comms",
+      "type": "object"
+    },
+    "ContactTrig": {
+      "additionalProperties": false,
+      "properties": {
+        "unit": {
+          "title": "Unit",
+          "type": "string"
+        },
+        "within_m": {
+          "title": "Within M",
+          "type": "number"
+        },
+        "los": {
+          "default": false,
+          "title": "Los",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "unit",
+        "within_m"
+      ],
+      "title": "ContactTrig",
+      "type": "object"
+    },
+    "DecisionPoint": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "when": {
+          "$ref": "#/$defs/Trigger"
+        },
+        "describes": {
+          "title": "Describes",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "when",
+        "describes"
+      ],
+      "title": "DecisionPoint",
+      "type": "object"
+    },
+    "FadingOverlay": {
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "default": false,
+          "title": "Enabled",
+          "type": "boolean"
+        },
+        "p": {
+          "default": 0.02,
+          "title": "P",
+          "type": "number"
+        },
+        "r": {
+          "default": 0.3,
+          "title": "R",
+          "type": "number"
+        },
+        "loss_bad": {
+          "default": 0.5,
+          "title": "Loss Bad",
+          "type": "number"
+        }
+      },
+      "title": "FadingOverlay",
+      "type": "object"
+    },
+    "FireMission": {
+      "additionalProperties": false,
+      "properties": {
+        "delay_s": {
+          "default": 120,
+          "title": "Delay S",
+          "type": "integer"
+        },
+        "cep_m": {
+          "default": 100,
+          "title": "Cep M",
+          "type": "number"
+        },
+        "radius_m": {
+          "default": 150,
+          "title": "Radius M",
+          "type": "number"
+        },
+        "damage_pct": {
+          "default": 15,
+          "title": "Damage Pct",
+          "type": "number"
+        }
+      },
+      "title": "FireMission",
+      "type": "object"
+    },
+    "GE": {
+      "additionalProperties": false,
+      "properties": {
+        "p": {
+          "title": "P",
+          "type": "number"
+        },
+        "r": {
+          "title": "R",
+          "type": "number"
+        }
+      },
+      "required": [
+        "p",
+        "r"
+      ],
+      "title": "GE",
+      "type": "object"
+    },
+    "Inject": {
+      "additionalProperties": false,
+      "properties": {
+        "at_tick": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "At Tick"
+        },
+        "kind": {
+          "enum": [
+            "jammer_add",
+            "jammer_move",
+            "jammer_remove",
+            "net_cut",
+            "net_delay",
+            "planted_report",
+            "gnss_zone_add"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "args": {
+          "additionalProperties": true,
+          "title": "Args",
+          "type": "object"
+        }
+      },
+      "required": [
+        "kind",
+        "args"
+      ],
+      "title": "Inject",
+      "type": "object"
+    },
+    "JammerCfg": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "power_dbm": {
+          "title": "Power Dbm",
+          "type": "number"
+        },
+        "antenna_m": {
+          "title": "Antenna M",
+          "type": "number"
+        },
+        "gain_dbi": {
+          "default": 0,
+          "title": "Gain Dbi",
+          "type": "number"
+        },
+        "freq_mhz": {
+          "title": "Freq Mhz",
+          "type": "number"
+        },
+        "bandwidth_khz": {
+          "title": "Bandwidth Khz",
+          "type": "number"
+        },
+        "mode": {
+          "default": "continuous",
+          "enum": [
+            "continuous",
+            "intermittent"
+          ],
+          "title": "Mode",
+          "type": "string"
+        },
+        "ge": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/GE"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "active": {
+          "default": true,
+          "title": "Active",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "id",
+        "power_dbm",
+        "antenna_m",
+        "freq_mhz",
+        "bandwidth_khz"
+      ],
+      "title": "JammerCfg",
+      "type": "object"
+    },
+    "LinkModel": {
+      "additionalProperties": false,
+      "properties": {
+        "noise_figure_db": {
+          "default": 8,
+          "title": "Noise Figure Db",
+          "type": "number"
+        },
+        "theta_db": {
+          "default": 6.0,
+          "title": "Theta Db",
+          "type": "number"
+        },
+        "slope_per_db": {
+          "default": 0.7,
+          "title": "Slope Per Db",
+          "type": "number"
+        },
+        "extra_loss_db": {
+          "default": 6,
+          "title": "Extra Loss Db",
+          "type": "number"
+        },
+        "k_factor": {
+          "default": 1.3333,
+          "title": "K Factor",
+          "type": "number"
+        },
+        "diffraction": {
+          "default": "single_knife_edge",
+          "enum": [
+            "single_knife_edge",
+            "deygout3"
+          ],
+          "title": "Diffraction",
+          "type": "string"
+        },
+        "profile_step_m": {
+          "default": 30,
+          "title": "Profile Step M",
+          "type": "number"
+        },
+        "partial_band_db": {
+          "default": 3.0,
+          "title": "Partial Band Db",
+          "type": "number"
+        },
+        "partial_field_drop_p": {
+          "default": 0.5,
+          "title": "Partial Field Drop P",
+          "type": "number"
+        },
+        "overhead_bits": {
+          "default": 400,
+          "title": "Overhead Bits",
+          "type": "integer"
+        },
+        "preamble_s": {
+          "default": 0.5,
+          "title": "Preamble S",
+          "type": "number"
+        }
+      },
+      "title": "LinkModel",
+      "type": "object"
+    },
+    "Movement": {
+      "additionalProperties": false,
+      "properties": {
+        "speed_mps": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "title": "Speed Mps",
+          "type": "object"
+        },
+        "slope_impassable_deg": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "title": "Slope Impassable Deg",
+          "type": "object"
+        },
+        "road_cost_factor": {
+          "default": 0.5,
+          "title": "Road Cost Factor",
+          "type": "number"
+        },
+        "pathfinding_grid_m": {
+          "default": 90,
+          "title": "Pathfinding Grid M",
+          "type": "number"
+        }
+      },
+      "required": [
+        "speed_mps",
+        "slope_impassable_deg"
+      ],
+      "title": "Movement",
+      "type": "object"
+    },
+    "Net": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "freq_mhz": {
+          "title": "Freq Mhz",
+          "type": "number"
+        },
+        "bandwidth_khz": {
+          "default": 25,
+          "title": "Bandwidth Khz",
+          "type": "number"
+        },
+        "data_rate_bps": {
+          "default": 1200,
+          "title": "Data Rate Bps",
+          "type": "number"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "freq_mhz"
+      ],
+      "title": "Net",
+      "type": "object"
+    },
+    "Outcomes": {
+      "additionalProperties": false,
+      "properties": {
+        "engage_range_m": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "title": "Engage Range M",
+          "type": "object"
+        },
+        "attrition_per_min": {
+          "additionalProperties": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "type": "object"
+          },
+          "title": "Attrition Per Min",
+          "type": "object"
+        },
+        "combat_ineffective_below": {
+          "default": 30,
+          "title": "Combat Ineffective Below",
+          "type": "number"
+        },
+        "fire_mission": {
+          "$ref": "#/$defs/FireMission",
+          "default": {
+            "delay_s": 120,
+            "cep_m": 100.0,
+            "radius_m": 150.0,
+            "damage_pct": 15.0
+          }
+        }
+      },
+      "required": [
+        "engage_range_m",
+        "attrition_per_min"
+      ],
+      "title": "Outcomes",
+      "type": "object"
+    },
+    "Place": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "ford",
+            "ridge",
+            "hill",
+            "village",
+            "crossroads",
+            "area"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "lonlat": {
+          "maxItems": 2,
+          "minItems": 2,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Lonlat",
+          "type": "array"
+        },
+        "intent": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Intent"
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "name",
+        "lonlat"
+      ],
+      "title": "Place",
+      "type": "object"
+    },
+    "PlanRule": {
+      "additionalProperties": false,
+      "properties": {
+        "when": {
+          "$ref": "#/$defs/Trigger"
+        },
+        "do": {
+          "items": {
+            "$ref": "#/$defs/Action"
+          },
+          "title": "Do",
+          "type": "array"
+        }
+      },
+      "required": [
+        "when",
+        "do"
+      ],
+      "title": "PlanRule",
+      "type": "object"
+    },
+    "Radio": {
+      "additionalProperties": false,
+      "properties": {
+        "power_dbm": {
+          "title": "Power Dbm",
+          "type": "number"
+        },
+        "antenna_m": {
+          "title": "Antenna M",
+          "type": "number"
+        },
+        "gain_dbi": {
+          "default": 0,
+          "title": "Gain Dbi",
+          "type": "number"
+        },
+        "nets": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Nets",
+          "type": "array"
+        }
+      },
+      "required": [
+        "power_dbm",
+        "antenna_m",
+        "nets"
+      ],
+      "title": "Radio",
+      "type": "object"
+    },
+    "Route": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "road",
+            "track"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "points": {
+          "items": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "type": "array"
+          },
+          "title": "Points",
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "kind",
+        "points"
+      ],
+      "title": "Route",
+      "type": "object"
+    },
+    "ScriptMsg": {
+      "additionalProperties": false,
+      "properties": {
+        "when": {
+          "$ref": "#/$defs/Trigger"
+        },
+        "template": {
+          "title": "Template",
+          "type": "string"
+        },
+        "phrasing": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Phrasing"
+        },
+        "fields": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "default": {},
+          "title": "Fields",
+          "type": "object"
+        },
+        "grade": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Grade"
+        },
+        "precedence": {
+          "default": "PRIORITY",
+          "enum": [
+            "FLASH",
+            "IMMEDIATE",
+            "PRIORITY",
+            "ROUTINE"
+          ],
+          "title": "Precedence",
+          "type": "string"
+        }
+      },
+      "required": [
+        "when",
+        "template"
+      ],
+      "title": "ScriptMsg",
+      "type": "object"
+    },
+    "Sensor": {
+      "additionalProperties": false,
+      "properties": {
+        "max_range_m": {
+          "title": "Max Range M",
+          "type": "number"
+        },
+        "base_p_per_s": {
+          "title": "Base P Per S",
+          "type": "number"
+        },
+        "eye_height_m": {
+          "title": "Eye Height M",
+          "type": "number"
+        },
+        "source_type": {
+          "title": "Source Type",
+          "type": "string"
+        },
+        "sigma_base_m": {
+          "title": "Sigma Base M",
+          "type": "number"
+        },
+        "sigma_per_km_m": {
+          "title": "Sigma Per Km M",
+          "type": "number"
+        }
+      },
+      "required": [
+        "max_range_m",
+        "base_p_per_s",
+        "eye_height_m",
+        "source_type",
+        "sigma_base_m",
+        "sigma_per_km_m"
+      ],
+      "title": "Sensor",
+      "type": "object"
+    },
+    "Side": {
+      "additionalProperties": false,
+      "properties": {
+        "units": {
+          "items": {
+            "$ref": "#/$defs/UnitCfg"
+          },
+          "title": "Units",
+          "type": "array"
+        }
+      },
+      "required": [
+        "units"
+      ],
+      "title": "Side",
+      "type": "object"
+    },
+    "StandingRules": {
+      "additionalProperties": false,
+      "properties": {
+        "locstat_every_s": {
+          "default": 180,
+          "title": "Locstat Every S",
+          "type": "integer"
+        },
+        "contact_cooldown_s": {
+          "default": 120,
+          "title": "Contact Cooldown S",
+          "type": "integer"
+        },
+        "track_drop_s": {
+          "default": 300,
+          "title": "Track Drop S",
+          "type": "integer"
+        },
+        "ack_orders": {
+          "default": true,
+          "title": "Ack Orders",
+          "type": "boolean"
+        },
+        "sitrep_when_strength_below": {
+          "default": 50,
+          "title": "Sitrep When Strength Below",
+          "type": "number"
+        },
+        "lost_comms_continue_last_order": {
+          "default": true,
+          "title": "Lost Comms Continue Last Order",
+          "type": "boolean"
+        }
+      },
+      "title": "StandingRules",
+      "type": "object"
+    },
+    "TerrainCfg": {
+      "additionalProperties": false,
+      "properties": {
+        "bbox": {
+          "maxItems": 4,
+          "minItems": 4,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Bbox",
+          "type": "array"
+        },
+        "crs_sim": {
+          "default": "EPSG:32643",
+          "title": "Crs Sim",
+          "type": "string"
+        },
+        "terrain_file": {
+          "title": "Terrain File",
+          "type": "string"
+        },
+        "grid_origin": {
+          "maxItems": 2,
+          "minItems": 2,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Grid Origin",
+          "type": "array"
+        }
+      },
+      "required": [
+        "bbox",
+        "terrain_file",
+        "grid_origin"
+      ],
+      "title": "TerrainCfg",
+      "type": "object"
+    },
+    "Trigger": {
+      "additionalProperties": false,
+      "properties": {
+        "at_tick": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "At Tick"
+        },
+        "contact": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ContactTrig"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "strength_below": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UnitPct"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "arrived": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UnitRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "observed": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UnitRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "title": "Trigger",
+      "type": "object"
+    },
+    "UnitCfg": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "callsign": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Callsign"
+        },
+        "role": {
+          "enum": [
+            "coy_hq",
+            "platoon",
+            "bn_hq",
+            "section",
+            "ew"
+          ],
+          "title": "Role",
+          "type": "string"
+        },
+        "player_role": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Player Role"
+        },
+        "type": {
+          "enum": [
+            "infantry",
+            "apc",
+            "tank",
+            "recce",
+            "hq",
+            "ew"
+          ],
+          "title": "Type",
+          "type": "string"
+        },
+        "echelon": {
+          "enum": [
+            "section",
+            "platoon",
+            "company",
+            "battalion"
+          ],
+          "title": "Echelon",
+          "type": "string"
+        },
+        "mobility": {
+          "enum": [
+            "foot",
+            "vehicle"
+          ],
+          "title": "Mobility",
+          "type": "string"
+        },
+        "sidc": {
+          "title": "Sidc",
+          "type": "string"
+        },
+        "lonlat": {
+          "maxItems": 2,
+          "minItems": 2,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Lonlat",
+          "type": "array"
+        },
+        "strength": {
+          "default": 100,
+          "title": "Strength",
+          "type": "number"
+        },
+        "posture": {
+          "default": "stationary",
+          "enum": [
+            "moving",
+            "stationary",
+            "dug_in"
+          ],
+          "title": "Posture",
+          "type": "string"
+        },
+        "radio": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Radio"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "sensors": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Sensors",
+          "type": "array"
+        },
+        "jammer": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/JammerCfg"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "id",
+        "role",
+        "type",
+        "echelon",
+        "mobility",
+        "sidc",
+        "lonlat"
+      ],
+      "title": "UnitCfg",
+      "type": "object"
+    },
+    "UnitPct": {
+      "additionalProperties": false,
+      "properties": {
+        "unit": {
+          "title": "Unit",
+          "type": "string"
+        },
+        "pct": {
+          "title": "Pct",
+          "type": "number"
+        }
+      },
+      "required": [
+        "unit",
+        "pct"
+      ],
+      "title": "UnitPct",
+      "type": "object"
+    },
+    "UnitRef": {
+      "additionalProperties": false,
+      "properties": {
+        "unit": {
+          "title": "Unit",
+          "type": "string"
+        }
+      },
+      "required": [
+        "unit"
+      ],
+      "title": "UnitRef",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "default": 1,
+      "title": "Schema Version",
+      "type": "integer"
+    },
+    "id": {
+      "title": "Id",
+      "type": "string"
+    },
+    "title": {
+      "title": "Title",
+      "type": "string"
+    },
+    "classification_label": {
+      "default": "ILLUSTRATIVE \u00b7 UNCLASSIFIED \u00b7 FICTIONAL NAMES",
+      "title": "Classification Label",
+      "type": "string"
+    },
+    "seed": {
+      "title": "Seed",
+      "type": "integer"
+    },
+    "tick_seconds": {
+      "default": 1.0,
+      "title": "Tick Seconds",
+      "type": "number"
+    },
+    "duration_ticks": {
+      "title": "Duration Ticks",
+      "type": "integer"
+    },
+    "start_clock": {
+      "title": "Start Clock",
+      "type": "string"
+    },
+    "terrain": {
+      "$ref": "#/$defs/TerrainCfg"
+    },
+    "labels": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "default": {},
+      "title": "Labels",
+      "type": "object"
+    },
+    "places": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/Place"
+      },
+      "title": "Places",
+      "type": "array"
+    },
+    "routes": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/Route"
+      },
+      "title": "Routes",
+      "type": "array"
+    },
+    "sensors": {
+      "additionalProperties": {
+        "$ref": "#/$defs/Sensor"
+      },
+      "default": {},
+      "title": "Sensors",
+      "type": "object"
+    },
+    "movement": {
+      "$ref": "#/$defs/Movement"
+    },
+    "outcomes": {
+      "$ref": "#/$defs/Outcomes"
+    },
+    "comms": {
+      "$ref": "#/$defs/Comms"
+    },
+    "sides": {
+      "additionalProperties": {
+        "$ref": "#/$defs/Side"
+      },
+      "title": "Sides",
+      "type": "object"
+    },
+    "red_plan": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/PlanRule"
+      },
+      "title": "Red Plan",
+      "type": "array"
+    },
+    "blue_script": {
+      "$ref": "#/$defs/BlueScript",
+      "default": {
+        "bn_hq": {
+          "messages": []
+        },
+        "standing_rules": {
+          "ack_orders": true,
+          "contact_cooldown_s": 120,
+          "locstat_every_s": 180,
+          "lost_comms_continue_last_order": true,
+          "sitrep_when_strength_below": 50.0,
+          "track_drop_s": 300
+        }
+      }
+    },
+    "decision_points": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/DecisionPoint"
+      },
+      "title": "Decision Points",
+      "type": "array"
+    },
+    "injects": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/Inject"
+      },
+      "title": "Injects",
+      "type": "array"
+    }
+  },
+  "required": [
+    "id",
+    "title",
+    "seed",
+    "duration_ticks",
+    "start_clock",
+    "terrain",
+    "movement",
+    "outcomes",
+    "comms",
+    "sides"
+  ],
+  "title": "Scenario",
+  "type": "object"
+}

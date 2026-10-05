@@ -1,0 +1,5 @@
+- {tick: 30,  order: {to: TIGER-3, kind: MOVE, to_place: HERON, speed: tactical, confidence: 70, relied_on: [], precedence: PRIORITY}}
+- {tick: 90,  order: {to: TIGER-1, kind: MOVE, to_place: TAMARIND, speed: tactical, confidence: 60, relied_on: [], precedence: PRIORITY}}
+- {tick: 300, order: {to: TIGER-3, kind: OBSERVE, to_place: OSPREY, confidence: 55, relied_on: ["@last_contact"], precedence: PRIORITY}}
+- {tick: 400, order: {to: ANVIL, kind: FIRE_MISSION, to_place: OSPREY, confidence: 40, relied_on: ["@last_contact"], precedence: IMMEDIATE}}
+- {tick: 500, text:  {to: ANVIL, net: BN, text: "TIGER. SITREP follows. All platoons in position. Over.", precedence: ROUTINE}}

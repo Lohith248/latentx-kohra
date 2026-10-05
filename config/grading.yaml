@@ -1,0 +1,14 @@
+reliability_by_source: {own_patrol: B, own_op: B, bn_intel: C, civil: E, unknown: F}
+credibility_by_quality:            # q in [0,1] from the detection model
+  - {min_q: 0.80, grade: 2}
+  - {min_q: 0.60, grade: 3}
+  - {min_q: 0.40, grade: 4}
+  - {min_q: 0.00, grade: 5}
+unknown_credibility: 6
+auto_assign_grade_1: false         # "confirmed by other sources" needs correlation (M2)
+# Own-station status traffic (LOCSTAT, SITREP, WILCO, SAY AGAIN, fire status) and Bn HQ orders
+# carry this grade unless a script or inject sets one.
+status_grade: B2
+labels:
+  reliability: {A: "Completely reliable", B: "Usually reliable", C: "Fairly reliable", D: "Not usually reliable", E: "Unreliable", F: "Reliability cannot be judged"}
+  credibility: {1: "Confirmed by other sources", 2: "Probably true", 3: "Possibly true", 4: "Doubtful", 5: "Improbable", 6: "Truth cannot be judged"}
