@@ -1,5 +1,0 @@
-#!/bin/sh
-# Remove tool attribution lines before git saves the commit message.
-tmp=$(mktemp)
-grep -v -i -E '^[[:space:]]*co-authored-by:.*(cursor|claude|anthropic|devin|copilot|codex|chatgpt|gemini|openai|\[bot\])|generated with|made with|claude-session' "$1" > "$tmp"
-mv "$tmp" "$1"
