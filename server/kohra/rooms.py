@@ -205,6 +205,7 @@ class Room:
         self.players: list[Any] = []
         self.ds: list[Any] = []
         self.ds_events: list[dict[str, Any]] = []
+        self.planted: set[str] = set()  # msg ids of planted reports, so the DS feed can flag orders citing them
         self.paused = False
         self.lock = asyncio.Lock()
 
@@ -215,14 +216,15 @@ class Room:
     async def run(self) -> None:
         loop = asyncio.get_running_loop()
         while not self.runner.done:
+            if self.paused:  # wall-clock pause only: commands are stamped by tick, so replay is unaffected
+                await asyncio.sleep(0.1)
+                continue
             t0 = loop.time()
             async with self.lock:
                 if self.bot:
                     self.bot.before_tick(self.runner)
                 res = self.runner.advance()
-                for kind, payload in res.events:
-                    if kind in DS_EVENT_KINDS:
-                        self.ds_events.append({"tick": res.tick, "kind": kind, "detail": payload})
+                self.collect(res)
                 if self.runner.done:
                     self.runner.finish()
             await self.broadcast(res.player_msgs)
@@ -233,6 +235,17 @@ class Room:
         if self.on_endex and self.runner.final_hash:
             await self.on_endex(self.runner.final_hash)
 
+    def collect(self, res: StepResult) -> None:
+        """Keep the events the DS view shows; orders citing a planted report are flagged for the DS."""
+        for kind, payload in res.events:
+            if kind == "inject_fired" and payload.get("kind") == "planted_report" and payload.get("msg"):
+                self.planted.add(str(payload["msg"]))
+            if kind in DS_EVENT_KINDS:
+                detail = payload
+                if kind == "order_applied":
+                    detail = {**payload, "planted_refs": [r for r in payload.get("relied_on") or [] if r in self.planted]}
+                self.ds_events.append({"tick": res.tick, "kind": kind, "detail": detail})
+
     def player_frames(self, new_msgs: list[dict[str, Any]]) -> list[dict[str, Any]]:
         r = self.runner
         return view_for(r.state.player, r.state, r.world, new_msgs, self.speed or 0.0, self.paused, self.endex,
@@ -240,17 +253,25 @@ class Room:
 
     def ds_frame(self) -> dict[str, Any]:
         r = self.runner
-        return ds_state(r.state, r.world, self.ds_events[-200:], self.endex, r.final_hash).model_dump()
+        return ds_state(r.state, r.world, self.ds_events[-200:], self.endex, r.final_hash, self.paused,
+                        self.speed or 0.0).model_dump()
 
     async def broadcast(self, new_msgs: list[dict[str, Any]]) -> None:
         if self.players:
             frames = self.player_frames(new_msgs)
             for ws in list(self.players):
-                with contextlib.suppress(Exception):
-                    for f in frames:
-                        await ws.send_json(f)
+                await self._send(self.players, ws, frames)
         if self.ds:
             frame = self.ds_frame()
             for ws in list(self.ds):
-                with contextlib.suppress(Exception):
-                    await ws.send_json(frame)
+                await self._send(self.ds, ws, [frame])
+
+    @staticmethod
+    async def _send(group: list[Any], ws: Any, frames: list[dict[str, Any]]) -> None:
+        """Send with a timeout; a closed or stalled socket is dropped instead of holding up the tick loop."""
+        try:
+            for f in frames:
+                await asyncio.wait_for(ws.send_json(f), timeout=2.0)
+        except Exception:
+            with contextlib.suppress(ValueError):
+                group.remove(ws)

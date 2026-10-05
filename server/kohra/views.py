@@ -15,7 +15,10 @@ from kohra.wire import (
     DsHello,
     DsJammer,
     DsLink,
+    DsNet,
+    DsPlaceRef,
     DsState,
+    DsStation,
     DsUnit,
     PHello,
     PHistory,
@@ -92,10 +95,17 @@ def ds_hello(world: World, basemap_kind: str) -> DsHello:
     return DsHello(title=sc.title, classification=sc.classification_label, places=places, routes=routes,
                    bbox=sc.terrain.bbox, synthetic=world.terrain.synthetic,
                    basemap_kind=basemap_kind,  # type: ignore[arg-type]
-                   start_clock=sc.start_clock, duration_ticks=sc.duration_ticks)
+                   start_clock=sc.start_clock, duration_ticks=sc.duration_ticks,
+                   nets=[DsNet(id=n.id, name=n.name, freq_mhz=n.freq_mhz, bandwidth_khz=n.bandwidth_khz)
+                         for n in sc.comms.nets],
+                   place_ids=[DsPlaceRef(id=p.id, name=p.name) for p in sc.places],
+                   stations=sorted((DsStation(callsign=u.callsign, nets=list(u.radio.nets))
+                                    for u in sc.all_units() if u.callsign and u.radio), key=lambda s: s.callsign),
+                   player=sc.player_unit().callsign or "")
 
 
-def ds_state(state: State, world: World, events: list[dict[str, Any]], endex: bool, final_hash: str | None) -> DsState:
+def ds_state(state: State, world: World, events: list[dict[str, Any]], endex: bool, final_hash: str | None,
+             paused: bool = False, speed: float = 0.0) -> DsState:
     lm = world.scenario.comms.link_model
     units = [DsUnit(id=u.id, side=u.side, callsign=u.callsign, sidc=u.sidc, lonlat=world.to_lonlat(u.x, u.y),
                     strength=round(u.strength, 1), posture=u.posture, status=u.status)
@@ -119,4 +129,4 @@ def ds_state(state: State, world: World, events: list[dict[str, Any]], endex: bo
                    jammers=jammers, links=links,
                    events=[DsEvent(tick=e["tick"], clock=_clock(world, e["tick"]), kind=e["kind"], detail=e["detail"])
                            for e in events],
-                   endex=endex, final_hash=final_hash)
+                   endex=endex, final_hash=final_hash, paused=paused, speed=speed)

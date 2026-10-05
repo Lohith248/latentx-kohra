@@ -208,7 +208,8 @@ def standing_rules(state: State, world: World, rng: Rng, detections: list[Detect
             if state.tick - tracks[tid].last_seen > sr.track_drop_s:
                 del tracks[tid]
     for u in _scripted_blue(state):
-        if u.arrived_tick == state.tick or state.tick - u.last_locstat >= sr.locstat_every_s:
+        if (u.arrived_tick == state.tick or state.tick - u.last_locstat >= sr.locstat_every_s
+                or state.tick == sr.initial_locstat_s):
             u.last_locstat = state.tick
             _report(state, world, rng, u, "locstat", {"grid": world.grid_ref(*believed_xy(u)),
                                                       "status": "engaged" if u.engaged else u.status,

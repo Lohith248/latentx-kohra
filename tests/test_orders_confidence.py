@@ -51,6 +51,21 @@ def test_rejected_and_hash_unchanged(ridge, flat_ridge_world, tmp_path, i) -> No
     assert "order_rejected" in kinds and "command" not in kinds
 
 
+def test_rationale_logged_never_transmitted(ridge, flat_ridge_world, tmp_path) -> None:  # type: ignore[no-untyped-def]
+    why = "Hold the ford before red recce arrives"
+    r = _run(ridge, flat_ridge_world, tmp_path / "why.sqlite", [{**GOOD, "rationale": why}])
+    applied = [p for _t, k, p in read_events(tmp_path / "why.sqlite") if k == "order_applied"]
+    assert applied and applied[0]["rationale"] == why
+    tx = [p for _t, k, p in read_events(tmp_path / "why.sqlite") if k == "message_tx" and p["msg"] == applied[0]["msg"]]
+    assert tx and why not in tx[0]["text"] and "rationale" not in r.state.perception.sent[0]
+
+
+@pytest.mark.parametrize("bad", ["x" * 141, "caf\u00e9"])
+def test_rationale_validated(ridge, flat_ridge_world, bad) -> None:  # type: ignore[no-untyped-def]
+    probe = Runner(ridge[0], ridge[1], world=flat_ridge_world, end_tick=1)
+    assert not probe.submit_player({**GOOD, "rationale": bad}).ok
+
+
 def test_valid_order_accepted_and_confidence_logged_not_sent(ridge, flat_ridge_world, tmp_path) -> None:  # type: ignore[no-untyped-def]
     r = _run(ridge, flat_ridge_world, tmp_path / "ok.sqlite", [{**GOOD, "confidence": 0, "relied_on": ["M-ABCD"]}])
     applied = [p for _t, k, p in read_events(tmp_path / "ok.sqlite") if k == "order_applied"]

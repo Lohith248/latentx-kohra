@@ -42,6 +42,11 @@ describe("order readiness (D14)", () => {
     const t = toWire({ ...emptyDraft(), to: "ANVIL", kind: "TEXT", text: " hello " }, 4, () => "BN");
     expect(t).toEqual({ type: "text", to: "ANVIL", net: "BN", text: "hello", precedence: "PRIORITY", client_seq: 4 });
   });
+  it("sends a rationale only when one is written", () => {
+    const base = { ...emptyDraft(), to: "TIGER-1", kind: "HALT" as const, confidence: 50, reliedNone: true };
+    expect(toWire(base, 1, () => "COY")).not.toHaveProperty("rationale");
+    expect(toWire({ ...base, rationale: "  hold the ford  " }, 2, () => "COY")).toMatchObject({ rationale: "hold the ford" });
+  });
 });
 
 describe("picture from parsed traffic only", () => {

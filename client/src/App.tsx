@@ -16,6 +16,7 @@ function TopBar() {
       <span className="clock" data-testid="clock">{status?.clock ?? "--:--:--"}</span>
       <span className="classif">{hello.classification}</span>
       {hello.synthetic && <span className="synthetic" data-testid="synthetic">SYNTHETIC TERRAIN</span>}
+      {status?.paused && !status.endex && <span className="paused" data-testid="paused">PAUSED</span>}
       <span className="heard" data-testid="last-heard">
         {hello.stations.map((s) => (
           <span key={s.callsign} className="heard-item">{s.callsign} <b>{sinceText(tick, status?.last_heard[s.callsign], hello.tick_seconds)}</b></span>

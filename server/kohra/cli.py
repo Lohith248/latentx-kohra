@@ -1,6 +1,6 @@
-"""KOHRA command line: run, headless, inject, inject-file, replay, verify-chain.
+"""KOHRA command line: run, headless, inject, inject-file, replay, verify-chain, aar.
 
-    python -m kohra.cli run --scenario scenarios/ridge.yaml --speed 1 [--host 0.0.0.0] [--port 8765]
+    python -m kohra.cli run --scenario scenarios/ridge.yaml --speed 1 [--host 0.0.0.0] [--port 8765] [--start-paused]
     python -m kohra.cli headless --scenario scenarios/ridge.yaml --bot scenarios/ridge.bot.yaml \
         --injects scenarios/demo_injects.yaml --ticks 1800 --log runs/x.sqlite
     python -m kohra.cli inject jammer_add id=J-1 lonlat=76.15,11.22 power_dbm=47 antenna_m=6 \
@@ -8,6 +8,7 @@
     python -m kohra.cli inject-file scenarios/demo_injects.yaml
     python -m kohra.cli replay runs/x.sqlite
     python -m kohra.cli verify-chain runs/x.sqlite
+    python -m kohra.cli aar runs/x.sqlite [-o runs/x.aar.html]
 """
 
 from __future__ import annotations
@@ -84,6 +85,15 @@ def cmd_verify(a: argparse.Namespace) -> int:
     return 0 if ok else 1
 
 
+def cmd_aar(a: argparse.Namespace) -> int:
+    from kohra.reports.aar import build_aar
+
+    out = Path(a.out) if a.out else Path(a.log).with_suffix(".aar.html")
+    out.write_text(build_aar(a.log, verify=not a.no_verify), encoding="utf-8")
+    print(f"AAR {out}")
+    return 0
+
+
 def parse_kv(pairs: list[str]) -> dict[str, Any]:
     out: dict[str, Any] = {}
     for p in pairs:
@@ -143,7 +153,7 @@ def cmd_run(a: argparse.Namespace) -> int:
     speed = None if a.speed == "max" else float(a.speed)
     app = create_app(a.scenario, speed=speed, host=a.host, port=a.port, log_path=a.log,
                      bot=a.bot, injects=a.injects, seed=a.seed, ticks=a.ticks, replay_at_endex=a.replay,
-                     tokens_path=Path(a.tokens) if a.tokens else TOKENS)
+                     tokens_path=Path(a.tokens) if a.tokens else TOKENS, start_paused=a.start_paused)
     uvicorn.run(app, host=a.host, port=a.port, log_level="warning")
     return 0
 
@@ -165,6 +175,7 @@ def main(argv: list[str] | None = None) -> int:
     r.add_argument("--ticks", type=int)
     r.add_argument("--replay", action="store_true", help="replay the log at ENDEX and print REPLAY OK")
     r.add_argument("--tokens", help="where to write the run-time tokens (default .kohra/tokens.json)")
+    r.add_argument("--start-paused", action="store_true", help="hold the clock at 06:00 until the DS presses Start")
     r.set_defaults(func=cmd_run)
 
     h = sub.add_parser("headless", help="run as fast as possible without a browser")
@@ -196,6 +207,12 @@ def main(argv: list[str] | None = None) -> int:
     v = sub.add_parser("verify-chain")
     v.add_argument("log")
     v.set_defaults(func=cmd_verify)
+
+    aa = sub.add_parser("aar", help="write the after-action review for a run log")
+    aa.add_argument("log")
+    aa.add_argument("-o", "--out", help="output HTML (default: next to the log, .aar.html)")
+    aa.add_argument("--no-verify", action="store_true", help="skip the chain check and replay")
+    aa.set_defaults(func=cmd_aar)
 
     a = ap.parse_args(argv)
     return int(a.func(a))

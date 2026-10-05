@@ -116,7 +116,7 @@ blue_script:
       - {when: {at_tick: 5},   template: frago,  fields: {task: "SECURE", place_name: "Ford OSPREY", grid_from_place: OSPREY, by_time: "0615"}, precedence: PRIORITY}
       - {when: {at_tick: 200}, template: intsum, fields: {size: platoon, unit_type: APC, grid_from_place: JUNIPER, direction: S, time: auto}, grade: C3, precedence: PRIORITY}
       - {when: {at_tick: 360}, template: request_sitrep, fields: {}, precedence: PRIORITY}
-  standing_rules: {locstat_every_s: 180, contact_cooldown_s: 120, track_drop_s: 300, ack_orders: true, sitrep_when_strength_below: 50, lost_comms_continue_last_order: true}
+  standing_rules: {locstat_every_s: 180, initial_locstat_s: 8, contact_cooldown_s: 120, track_drop_s: 300, ack_orders: true, sitrep_when_strength_below: 50, lost_comms_continue_last_order: true}
 
 decision_points:
   - {id: DP1, when: {at_tick: 240}, describes: "Enemy recce may be at the ford. Push TIGER-1 across now, or hold and observe from Pt HERON?"}

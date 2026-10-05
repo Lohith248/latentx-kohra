@@ -125,6 +125,7 @@
           "$ref": "#/$defs/StandingRules",
           "default": {
             "locstat_every_s": 180,
+            "initial_locstat_s": null,
             "contact_cooldown_s": 120,
             "track_drop_s": 300,
             "ack_orders": true,
@@ -885,6 +886,18 @@
           "title": "Locstat Every S",
           "type": "integer"
         },
+        "initial_locstat_s": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Initial Locstat S"
+        },
         "contact_cooldown_s": {
           "default": 120,
           "title": "Contact Cooldown S",
@@ -1319,6 +1332,7 @@
         "standing_rules": {
           "ack_orders": true,
           "contact_cooldown_s": 120,
+          "initial_locstat_s": null,
           "locstat_every_s": 180,
           "lost_comms_continue_last_order": true,
           "sitrep_when_strength_below": 50.0,
