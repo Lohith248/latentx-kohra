@@ -1,4 +1,4 @@
-"""K-02: DS start/pause/speed controls, DS hello fields, and the after-action review endpoint."""
+"""DS start/pause/speed controls, DS hello fields, and the after-action review endpoint."""
 
 from __future__ import annotations
 

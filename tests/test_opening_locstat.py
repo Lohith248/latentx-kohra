@@ -1,4 +1,4 @@
-"""K-07: an opening LOCSTAT round gives the commander a picture in the first minute."""
+"""An opening LOCSTAT round gives the commander a picture in the first minute."""
 
 from __future__ import annotations
 

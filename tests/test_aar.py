@@ -1,4 +1,4 @@
-"""K-01: the after-action review is built from the run log alone."""
+"""The after-action review is built from the run log alone."""
 
 from __future__ import annotations
 
