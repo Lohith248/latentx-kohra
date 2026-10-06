@@ -29,7 +29,7 @@ class ClientOrder(_M):
     precedence: Precedence = "PRIORITY"
     confidence: StrictInt = Field(ge=0, le=100)  # required: no default (D14)
     relied_on: list[str] = Field(max_length=50)  # required, may be empty
-    rationale: str | None = Field(default=None, max_length=140, pattern=r"^[\x20-\x7E]*$")  # logged, never sent
+    rationale: str | None = Field(default=None, max_length=140, pattern=r"^[^\x00-\x1F\x7F]*$")  # any script; logged, never sent
     client_seq: int = 0
 
     @model_validator(mode="after")

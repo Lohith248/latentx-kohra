@@ -46,6 +46,16 @@ def _esc(v: Any) -> str:
     return html.escape(str(v))
 
 
+def _order(kind: Any) -> str:
+    """Order kinds as a reader says them: "FIRE_MISSION" -> "Fire mission"."""
+    return _esc(str(kind).replace("_", " ").capitalize())
+
+
+INJECT_NAMES = {"jammer_add": "Jammer placed", "jammer_move": "Jammer moved", "jammer_remove": "Jammer removed",
+                "net_cut": "Net cut", "net_delay": "Net delayed", "planted_report": "Planted report",
+                "gnss_zone_add": "GNSS spoofing started"}
+
+
 def build_aar(log: str | Path, verify: bool = True) -> str:
     """Return the AAR page for a finished run. `verify` re-checks the hash chain and replays the run."""
     path = Path(log)
@@ -104,17 +114,18 @@ def build_aar(log: str | Path, verify: bool = True) -> str:
                 continue
             age = (int(o["tick"]) - int(src["tick"])) * dt
             planted = " <b class=bad>(planted)</b>" if src.get("planted") else ""
-            cited_txt.append(f"{_esc(r)}: {_esc(str(src['kind']).upper())}, grade {_esc(src.get('grade') or '-')}, "
-                             f"{age:.0f} s old{planted}")
+            cited_txt.append(f"{_esc(str(src['kind']).upper())} from {_esc(src['from'])}, grade "
+                             f"{_esc(src.get('grade') or '-')}, {age:.0f} s old{planted} <span class=note>({_esc(r)})</span>")
             if src.get("planted"):
                 others = len(cited) - 1
-                findings.append(("bad", f"{when}: {_esc(o['kind'])} to {_esc(o['to'])} (confidence {o['confidence']}%) "
-                                        f"cited {_esc(r)}, a {_esc(src.get('grade'))} {_esc(str(src['kind']).upper())} "
-                                        f"attributed to {_esc(src['from'])}. That report was a DS deception inject. "
+                findings.append(("bad", f"{when}: {_order(o['kind'])} to {_esc(o['to'])} (confidence {o['confidence']}%) "
+                                        f"relied on a {_esc(src.get('grade'))} {_esc(str(src['kind']).upper())} "
+                                        f"attributed to {_esc(src['from'])}. That report was planted by the instructor "
+                                        "to deceive. "
                                         + ("No other report was cited." if not others
                                            else f"{others} other report(s) were cited alongside it.")))
         if o.get("confidence") is not None and int(o["confidence"]) >= 70 and not cited:
-            findings.append(("warn", f"{when}: {_esc(o['kind'])} to {_esc(o['to'])} stated {o['confidence']}% confidence "
+            findings.append(("warn", f"{when}: {_order(o['kind'])} to {_esc(o['to'])} stated {o['confidence']}% confidence "
                                      "but cited no report. Debrief question: what was the confidence based on?"))
         ack = next((m for m, d in heard
                     if tx[m]["kind"] == "ack" and str(o["msg"]) in str(tx[m]["text"]) and d["delivered"]), None)
@@ -125,7 +136,7 @@ def build_aar(log: str | Path, verify: bool = True) -> str:
         conf = "" if o.get("confidence") is None else f"{o['confidence']}%"
         basis = "<br>".join(cited_txt) or ("None cited" if o.get("confidence") is not None else "")
         wilco = clock(int(rx[ack][player]["tick"])) if ack else "<span class=bad>Not received</span>"
-        rows.append(f"<tr><td>{when}</td><td>{_esc(o['kind'])}</td><td>{_esc(o['to'])}</td><td>{conf}</td><td>{basis}</td>"
+        rows.append(f"<tr><td>{when}</td><td>{_order(o['kind'])}</td><td>{_esc(o['to'])}</td><td>{conf}</td><td>{basis}</td>"
                     f"<td>{_esc(o.get('rationale') or '')}</td><td>{delivery}</td><td>{wilco}</td></tr>")
 
     lost = [(m, d) for m, d in heard if not d["delivered"]]
@@ -147,7 +158,7 @@ def build_aar(log: str | Path, verify: bool = True) -> str:
                          + (f" Own units hit: {', '.join(blue)}." if blue else "")))
     for d in dps:
         nxt = next((o for o in orders if int(o["tick"]) >= int(d["tick"])), None)
-        lat = (f"First order issued {(int(nxt['tick']) - int(d['tick'])) * dt:.0f} s later ({_esc(nxt['kind'])} to "
+        lat = (f"First order issued {(int(nxt['tick']) - int(d['tick'])) * dt:.0f} s later ({_order(nxt['kind'])} to "
                f"{_esc(nxt['to'])})." if nxt else "No order followed.")
         findings.append(("info", f"{clock(int(d['tick']))}: decision point {_esc(d['id'])}, "
                                  f"“{_esc(d['describes'])}” {lat}"))
@@ -187,7 +198,7 @@ def build_aar(log: str | Path, verify: bool = True) -> str:
 <p>Trainee: <b>{_esc(player)}</b> (company commander) | Seed {start['seed']} | {clock(0)} to {clock(end)} | Final state hash <code>{_esc(final)}</code></p>{integrity}
 <h2>Debrief points</h2><ul>{points}</ul>
 <h2>Timeline</h2>{timeline}
-<p class=note>Shaded: jammer among the company. Bars: orders, height proportional to stated confidence. Ticks: reports that reached {_esc(player)} (green) and reports lost (red).</p>
+<p class=note>Shaded: jammer among the company. Red dots: instructor injects. Bars: orders, height proportional to stated confidence. Ticks: reports that reached {_esc(player)} (green) and reports lost (red).</p>
 <h2>Decision log</h2>
 <table><tr><th>Time</th><th>Order</th><th>To</th><th>Confidence</th><th>Reports cited</th><th>Rationale</th><th>Order delivery</th><th>WILCO received</th></tr>{''.join(rows)}</table>
 <h2>Reports lost to degraded communications</h2><table><tr><th>Phase</th><th>Received</th><th>Lost</th></tr>{phases}</table>
@@ -198,29 +209,29 @@ def build_aar(log: str | Path, verify: bool = True) -> str:
 
 def _timeline(end: int, clock: Callable[[int], str], injects: list[Event], dps: list[Event], orders: list[Event],
               heard: list[tuple[str, Event]], tx: dict[str, Event], jam_on: list[int], jam_off: list[int]) -> str:
-    width = 1000
+    width, left = 1000, 150
 
     def x(t: int) -> float:
-        return 110 + (width - 130) * t / max(end, 1)
+        return left + (width - left - 20) * t / max(end, 1)
 
-    svg = [f'<svg viewBox="0 0 {width} 190" class=tl><style>text{{font:11px system-ui}}</style>']
-    for i, lane in enumerate(["DS injects", "Decision points", "Orders", "Reports in / lost"]):
+    svg = [f'<svg viewBox="0 0 {width} 196" class=tl><style>text{{font:14px system-ui;fill:#1d2433}}</style>']
+    for i, lane in enumerate(["Instructor injects", "Decision points", "Orders", "Reports in / lost"]):
         y = 30 + i * 42
-        svg.append(f'<text x="4" y="{y + 4}">{lane}</text><line x1="110" x2="{width - 20}" y1="{y}" y2="{y}" stroke="#ddd"/>')
+        svg.append(f'<text x="6" y="{y + 5}">{lane}</text><line x1="{left}" x2="{width - 20}" y1="{y}" y2="{y}" stroke="#ddd"/>')
     for t0 in range(0, end + 1, 60):
-        svg.append(f'<text x="{x(t0) - 14:.0f}" y="185" fill="#777">{clock(t0)[3:]}</text>')
+        svg.append(f'<text x="{x(t0) - 18:.0f}" y="190" style="fill:#555">{clock(t0)[3:]}</text>')
     if jam_on:
         a, b = jam_on[0], (jam_off[0] if jam_off else end)
         svg.append(f'<rect x="{x(a):.0f}" y="12" width="{x(b) - x(a):.0f}" height="158" fill="#d01c1c" opacity=".07"/>')
     for inj in injects:
         svg.append(f'<circle cx="{x(int(inj["tick"])):.0f}" cy="30" r="5" fill="#d01c1c">'
-                   f'<title>{clock(int(inj["tick"]))} {_esc(inj["kind"])}</title></circle>')
+                   f'<title>{clock(int(inj["tick"]))} {_esc(INJECT_NAMES.get(str(inj["kind"]), inj["kind"]))}</title></circle>')
     for d in dps:
         svg.append(f'<rect x="{x(int(d["tick"])) - 4:.0f}" y="68" width="8" height="8" fill="#e0a100"><title>{_esc(d["id"])}</title></rect>')
     for o in orders:
         c = int(o.get("confidence") or 0)
         svg.append(f'<rect x="{x(int(o["tick"])) - 3:.0f}" y="{114 - c * 0.3:.0f}" width="6" height="{c * 0.3:.0f}" '
-                   f'fill="#1f5fa8"><title>{clock(int(o["tick"]))} {_esc(o["kind"])} {c}%</title></rect>')
+                   f'fill="#1f5fa8"><title>{clock(int(o["tick"]))} {_order(o["kind"])} {c}%</title></rect>')
     for m, d in heard:
         col, y = ("#1b9e3a", 148) if d["delivered"] else ("#d01c1c", 162)
         svg.append(f'<line x1="{x(int(d["tick"])):.0f}" x2="{x(int(d["tick"])):.0f}" y1="{y - 7}" y2="{y + 3}" stroke="{col}" '

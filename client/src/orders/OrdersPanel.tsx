@@ -75,7 +75,7 @@ export function OrdersPanel() {
             </label>
             <label className="grow">Rationale (optional)
               <input type="text" maxLength={140} value={d.rationale} data-testid="rationale" placeholder="Why this order, in one line"
-                onChange={(e) => set({ rationale: e.target.value.replace(/[^\x20-\x7E]/g, "") })} />
+                onChange={(e) => set({ rationale: e.target.value.replace(/[\x00-\x1F\x7F]/g, "") })} />
             </label>
           </>
         )}

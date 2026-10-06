@@ -15,7 +15,10 @@ body { font: 13px/1.35 system-ui, -apple-system, "Segoe UI", sans-serif; color: 
 .endex-banner code { background: rgba(255,255,255,.15); padding: 1px 6px; }
 .endex { background: #1f3a5c; padding: 2px 8px; }
 .play-body { flex: 1; display: flex; min-height: 0; }
+.map-wrap { flex: 1; min-width: 0; position: relative; display: flex; }
 .map { flex: 1; min-width: 0; position: relative; }
+.map-loading { position: absolute; inset: 0; display: grid; place-items: center; background: #e4e6d8; color: #3a4a32;
+  font: 600 15px system-ui, sans-serif; z-index: 5; pointer-events: none; }
 .radio { width: 44%; max-width: 720px; display: flex; flex-direction: column; border-left: 1px solid #c7c9b8; background: #fbfbf7; }
 .radio h2 { margin: 0; padding: 6px 10px; font-size: 13px; background: #e6e7dc; }
 .radio-scroll { overflow: auto; flex: 1; }
@@ -30,6 +33,11 @@ body { font: 13px/1.35 system-ui, -apple-system, "Segoe UI", sans-serif; color: 
 .prec-IMMEDIATE { background: #e07a00; color: #fff; }
 .prec-PRIORITY { background: #2f6d9e; color: #fff; }
 .grade { font: 600 11px ui-monospace, Consolas, monospace; background: #303a26; color: #fff; padding: 0 5px; border-radius: 3px; }
+.grade.doubt { background: #c77700; }
+.grade.poor { background: #b3261e; }
+.radio tr.fresh td { animation: fresh 4s ease-out; }
+@keyframes fresh { 0%, 30% { background: #ffe58a; } 100% { background: transparent; } }
+.radio td.empty { white-space: normal; color: #666; padding: 10px; font-style: italic; }
 .partial { margin-left: 6px; font-size: 10px; font-weight: 700; color: #fff; background: #8c2f9e; padding: 0 4px; border-radius: 3px; }
 .orders { border-top: 1px solid #c7c9b8; background: #ecede3; padding: 8px 12px; }
 .orders fieldset { display: flex; gap: 12px; align-items: flex-end; border: 0; padding: 0; margin: 0; flex-wrap: wrap; }

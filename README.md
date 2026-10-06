@@ -1,6 +1,6 @@
 # KOHRA
 
-**A fog-of-war trainer that separates what jamming cost from what the commander missed.**
+**A fog-of-war trainer that scores command decisions when radio reports are jammed, late or false.**
 
 Team Latent_X (IIIT Bangalore) · Smart India Hackathon 2026 · Problem statement **SIH26248**, Ministry of Defence (Defence Services Staff College): an immersive multi-domain decision-making trainer for degraded communication environments.
 
@@ -17,7 +17,7 @@ KOHRA puts a company commander in a 12-minute vignette where information is **in
 - **Degraded comms, from physics.** Messages travel over simulated VHF nets. Whether a message arrives depends on terrain (hills block signals) and on where enemy jammers are. Messages can arrive late, garbled, or not at all.
 - **The commander sees only what arrives.** Enemy contacts carry an age and a grade. Own platoons appear only when they report their position. "Last heard" timers show who has gone silent. **Every order must state a confidence and the reports it relied on**, and can carry a one-line rationale.
 - **The instructor runs the exercise live.** From the Directing Staff view (`/ds`) the instructor starts, pauses or speeds up the exercise and, mid-exercise, places or moves a jammer on the map, cuts or delays a net, plants a false report, or starts GNSS spoofing. The same view shows ground truth and every trainee decision as it is made: the order, the stated confidence, the reports cited (flagged if planted) and the rationale.
-- **After-action review.** At ENDEX the run log becomes a debrief page: the decision log with confidence, cited reports and rationale; reports lost to jamming, by phase and cause; response times after decision points; and fire-mission outcomes. It separates what the jamming cost from what the commander missed.
+- **After-action review.** At ENDEX the run log becomes a debrief page: the decision log with confidence, cited reports and rationale; reports lost to jamming, by phase and cause; response times after decision points; and fire-mission outcomes. It shows what was lost to jamming and which orders relied on false reports; separating what the jamming cost from what the commander missed needs the reference reader, which is on the roadmap.
 - **Replay.**
   - Every command is logged in a tamper-evident, hash-chained log.
   - Replaying the log reproduces the exact same state hashes, including the final one.
@@ -150,7 +150,7 @@ uv run python -m kohra.cli aar runs/<log>.sqlite            # writes runs/<log>.
 ## Tests
 
 ```bash
-uv run pytest -q                                   # 166 tests
+uv run pytest -q                                   # 171 tests
 uv run mypy --strict -p kohra.sim -p kohra.comms -p kohra.reports -p kohra.observe -p kohra.log
 uv run ruff check .
 cd client && npm ci && npm test && npm run build && npx playwright install chromium && npx playwright test

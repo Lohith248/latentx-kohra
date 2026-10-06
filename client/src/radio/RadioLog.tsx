@@ -1,15 +1,26 @@
 import { useEffect, useRef } from "react";
+import { gradeBand } from "../state/labels";
 import { ageText } from "../state/picture";
 import { usePlayer } from "../state/store";
+
+const FRESH_MS = 4000;
 
 export function RadioLog() {
   const msgs = usePlayer((s) => s.msgs);
   const tick = usePlayer((s) => s.status?.tick ?? 0);
+  const live = usePlayer((s) => s.status !== null);
   const tickS = usePlayer((s) => s.hello?.tick_seconds ?? 1);
   const relied = usePlayer((s) => s.draft.reliedOn);
   const toggle = usePlayer((s) => s.toggleRelied);
   const endex = usePlayer((s) => s.status?.endex ?? false);
   const bottom = useRef<HTMLDivElement | null>(null);
+  // Every report that arrives during play is highlighted for a few seconds, whatever its source.
+  const seen = useRef(new Map<string, number>());
+  const now = Date.now();
+  for (const m of live ? msgs : []) { // wait for the clock, so history on first load is not highlighted
+    const k = m.msg_id + m.direction;
+    if (!seen.current.has(k)) seen.current.set(k, m.direction === "in" && tick - m.tick <= 5 ? now : 0);
+  }
   useEffect(() => { bottom.current?.scrollIntoView({ block: "end" }); }, [msgs.length]);
   return (
     <section className="radio" data-testid="radio-log">
@@ -18,8 +29,12 @@ export function RadioLog() {
         <table>
           <thead><tr><th title="Relied on">✓</th><th>Time</th><th>Net</th><th>From</th><th>Prec</th><th>Message</th><th>Grade</th><th>Age</th></tr></thead>
           <tbody>
+            {msgs.length === 0 && (
+              <tr><td colSpan={8} className="empty">No traffic yet. Reports appear here as they arrive; tick ✓ on the ones an order relies on.</td></tr>
+            )}
             {msgs.map((m) => (
-              <tr key={m.msg_id + m.direction} className={m.direction === "out" ? "out" : ""} data-msg={m.msg_id}>
+              <tr key={m.msg_id + m.direction} data-msg={m.msg_id}
+                className={[m.direction === "out" ? "out" : "", now - (seen.current.get(m.msg_id + m.direction) ?? 0) < FRESH_MS ? "fresh" : ""].join(" ").trim()}>
                 <td>{m.direction === "in" && (
                   <input type="checkbox" aria-label={`rely on ${m.msg_id}`} checked={relied.includes(m.msg_id)} disabled={endex}
                     onChange={() => toggle(m.msg_id)} />)}</td>
@@ -28,7 +43,7 @@ export function RadioLog() {
                 <td>{m.direction === "out" ? `→ ${m.to}` : m.sender}</td>
                 <td><span className={`prec prec-${m.precedence}`}>{m.precedence}</span></td>
                 <td className="text">{m.text}{m.partial && <span className="partial">PARTIAL</span>}</td>
-                <td>{m.grade && <span className="grade" title="reliability / credibility">{m.grade}</span>}</td>
+                <td>{m.grade && <span className={`grade ${gradeBand(m.grade)}`} title="Source reliability (A–F) / information credibility (1–6)">{m.grade}</span>}</td>
                 <td className="mono">{ageText((tick - m.tick) * tickS)}</td>
               </tr>
             ))}

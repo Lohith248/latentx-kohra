@@ -60,10 +60,17 @@ def test_rationale_logged_never_transmitted(ridge, flat_ridge_world, tmp_path) -
     assert tx and why not in tx[0]["text"] and "rationale" not in r.state.perception.sent[0]
 
 
-@pytest.mark.parametrize("bad", ["x" * 141, "caf\u00e9"])
+@pytest.mark.parametrize("bad", ["x" * 141, "line\nbreak", "tab\there"])
 def test_rationale_validated(ridge, flat_ridge_world, bad) -> None:  # type: ignore[no-untyped-def]
     probe = Runner(ridge[0], ridge[1], world=flat_ridge_world, end_tick=1)
     assert not probe.submit_player({**GOOD, "rationale": bad}).ok
+
+
+@pytest.mark.parametrize("why", ["caf\u00e9 at the ford", "\u092a\u0941\u0932 \u092a\u0915\u0921\u093c\u094b",
+                                 "\u0cb8\u0cc7\u0ca4\u0cc1\u0cb5\u0cc6 \u0cb9\u0cbf\u0ca1\u0cbf"])
+def test_rationale_any_script(ridge, flat_ridge_world, why) -> None:  # type: ignore[no-untyped-def]
+    probe = Runner(ridge[0], ridge[1], world=flat_ridge_world, end_tick=1)
+    assert probe.submit_player({**GOOD, "rationale": why}).ok
 
 
 def test_valid_order_accepted_and_confidence_logged_not_sent(ridge, flat_ridge_world, tmp_path) -> None:  # type: ignore[no-untyped-def]
