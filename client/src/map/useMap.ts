@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import type { FeatureCollection } from "geojson";
 import type { Place, Route } from "../state/types";
 import { buildStyle, CREDITS } from "./style";
+import { declutter } from "./declutter";
 import { labelImage, type Img } from "./symbols";
 
 let protocolAdded = false;
@@ -15,6 +16,7 @@ declare global { interface Window { __kohraMap?: MlMap } }
 export function useKohraMap(cfg: MapCfg | null) {
   const ref = useRef<HTMLDivElement | null>(null);
   const [map, setMap] = useState<MlMap | null>(null);
+  const [ready, setReady] = useState(false);
   useEffect(() => {
     if (!cfg || !ref.current) return;
     if (!protocolAdded) {
@@ -41,19 +43,30 @@ export function useKohraMap(cfg: MapCfg | null) {
         data: { type: "FeatureCollection", features: cfg.routes.map((r) => ({ type: "Feature", properties: {}, geometry: { type: "LineString", coordinates: r.points } })) },
       });
       m.addLayer({ id: "routes", type: "line", source: "routes", paint: { "line-color": "#8a3b12", "line-width": 2, "line-dasharray": [3, 2], "line-opacity": 0.6 } });
-      setPoints(m, "places", cfg.places.map((p) => ({ key: `place/${p.name}`, lonlat: p.lonlat, img: labelImage(p.name), props: {} })));
+      // Place names sit just below their point and give way to unit symbols instead of overprinting them.
+      setPoints(m, "places", cfg.places.map((p) => ({ key: `place/${p.name}`, lonlat: p.lonlat, img: labelImage(p.name), props: {} })),
+        undefined, PLACE_LAYOUT);
       window.__kohraMap = m;
       setMap(m);
     });
-    return () => { m.remove(); setMap(null); };
+    m.once("idle", () => setReady(true)); // first frame with tiles drawn
+    return () => { m.remove(); setMap(null); setReady(false); };
   }, [cfg]);
-  return { ref, map };
+  return { ref, map, ready };
 }
 
 export interface Point { key: string; lonlat: [number, number]; img: Img; props: Record<string, unknown>; opacity?: number }
 
+const lastPts = new WeakMap<MlMap, Map<string, { pts: Point[]; before?: string; layout: SymbolLayout }>>();
+
+type SymbolLayout = NonNullable<maplibregl.SymbolLayerSpecification["layout"]>;
+
+/** Unit symbols always draw and reserve their space, so lower-priority labels can avoid them. */
+const UNIT_LAYOUT: SymbolLayout = { "icon-allow-overlap": true, "icon-ignore-placement": false };
+const PLACE_LAYOUT: SymbolLayout = { "icon-allow-overlap": false, "icon-ignore-placement": false, "icon-anchor": "top", "icon-offset": [0, 4] };
+
 /** Upsert a symbol layer whose icons are canvas images (unit symbols or labels). */
-export function setPoints(m: MlMap, id: string, pts: Point[], before?: string): void {
+export function setPoints(m: MlMap, id: string, pts: Point[], before?: string, layout: SymbolLayout = UNIT_LAYOUT): void {
   for (const p of pts) {
     const img = { width: p.img.width, height: p.img.height, data: p.img.data };
     const pr = window.devicePixelRatio > 1 ? 2 : 1;
@@ -63,16 +76,31 @@ export function setPoints(m: MlMap, id: string, pts: Point[], before?: string): 
       else { m.removeImage(p.key); m.addImage(p.key, img, { pixelRatio: pr }); }
     } else m.addImage(p.key, img, { pixelRatio: pr });
   }
+  const spread = layout === UNIT_LAYOUT;
+  const offs = spread ? declutter(pts.map((p) => { const s = m.project(p.lonlat); return [s.x, s.y] as [number, number]; })) : [];
   const data: FeatureCollection = {
     type: "FeatureCollection",
-    features: pts.map((p) => ({ type: "Feature", properties: { ...p.props, icon: p.key, opacity: p.opacity ?? 1 }, geometry: { type: "Point", coordinates: p.lonlat } })),
+    features: pts.map((p, i) => ({
+      type: "Feature", properties: { ...p.props, icon: p.key, opacity: p.opacity ?? 1, off: offs[i] ?? [0, 0] },
+      geometry: { type: "Point", coordinates: p.lonlat },
+    })),
   };
+  if (spread) {
+    let byLayer = lastPts.get(m);
+    if (!byLayer) {
+      const layers = new Map<string, { pts: Point[]; before?: string; layout: SymbolLayout }>();
+      lastPts.set(m, layers);
+      byLayer = layers;
+      m.on("zoomend", () => { for (const [lid, v] of layers) setPoints(m, lid, v.pts, v.before, v.layout); });
+    }
+    byLayer.set(id, { pts, before, layout });
+  }
   const src = m.getSource(id) as GeoJSONSource | undefined;
   if (src) { src.setData(data); return; }
   m.addSource(id, { type: "geojson", data });
   m.addLayer({
     id, type: "symbol", source: id,
-    layout: { "icon-image": ["get", "icon"], "icon-allow-overlap": true, "icon-ignore-placement": true },
+    layout: { "icon-image": ["get", "icon"], ...layout, ...(spread ? { "icon-offset": ["get", "off"] } : {}) },
     paint: { "icon-opacity": ["get", "opacity"] },
   }, before);
 }

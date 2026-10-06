@@ -34,7 +34,7 @@ def test_flags_an_order_based_on_a_planted_report(ridge, flat_ridge_world, tmp_p
     assert planted, "the planted INTSUM never reached the player"
     page = build_aar(log, verify=False)
     assert "After-action review" in page and "Decision log" in page
-    assert "DS deception inject" in page and "No other report was cited." in page
+    assert "planted by the instructor to deceive" in page and "FIRE_MISSION" not in page and "No other report was cited." in page
     assert "Tank platoon reported in TAMARIND" in page
     assert "(planted)" in page
 

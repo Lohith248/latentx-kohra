@@ -4,6 +4,7 @@ import type maplibregl from "maplibre-gl";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { unitImage } from "../map/symbols";
 import { circle, setGeo, setPoints, useKohraMap } from "../map/useMap";
+import { orderName, sinrWord } from "../state/labels";
 import { dsPost, token, useDs } from "../state/store";
 import type { DsEvent, DsHello, DsState, LonLat } from "../state/types";
 
@@ -20,6 +21,7 @@ const EVENT_KINDS = new Set(["inject_fired", "inject_failed", "decision_point", 
 function sinrColour(s: number, theta: number): string {
   return s >= theta + 3 ? "#1b9e3a" : s >= theta ? "#e0a100" : "#d01c1c";
 }
+
 
 /** Latest value, at most every `ms` (trailing update guaranteed), so fast runs don't keep the map busy. */
 function useThrottled<T>(value: T, ms: number): T {
@@ -46,6 +48,15 @@ function errorText(data: unknown, status: number): string {
   return `HTTP ${status}`;
 }
 
+/** Fetch the review with the DS token in a header and show it from a blob URL, so the token never sits in a URL. */
+async function openAar(notify: Notify): Promise<void> {
+  const tab = window.open("", "_blank");
+  const r = await fetch("/api/ds/aar", { headers: { Authorization: `Bearer ${token()}` } });
+  if (!r.ok) { tab?.close(); notify(`Refused: HTTP ${r.status}`, false); return; }
+  const url = URL.createObjectURL(new Blob([await r.text()], { type: "text/html" }));
+  if (tab) tab.location.href = url; else window.location.href = url;
+}
+
 async function inject(kind: string, args: Record<string, unknown>, label: string, notify: Notify): Promise<void> {
   const r = await dsPost("/api/ds/inject", { kind, args });
   notify(r.ok ? label : `Refused: ${errorText(r.data, r.status)}`, r.ok);
@@ -68,7 +79,7 @@ export function describe(e: DsEvent): string {
     }
     case "red_rule": {
       const acts = (d.actions as Record<string, unknown>[] | undefined) ?? [];
-      return acts.map((a) => `${String(a.unit)} ${String(a.action)}${a.to_place ? ` to ${String(a.to_place)}` : ""}${a.via_route ? ` via ${String(a.via_route)}` : ""}`).join("; ") || "Red plan step";
+      return acts.map((a) => `${String(a.unit)} ${String(a.action).replace(/_/g, " ")}${a.to_place ? ` to ${String(a.to_place)}` : ""}${a.via_route ? ` via ${String(a.via_route)}` : ""}`).join("; ") || "Red plan step";
     }
     case "inject_fired":
       switch (d.kind) {
@@ -77,7 +88,7 @@ export function describe(e: DsEvent): string {
         case "jammer_remove": return `Jammer ${String(args.id)} removed${late}`;
         case "net_cut": return `${String(args.net)} net cut for ${String(args.duration_s)} s${late}`;
         case "net_delay": return `${String(args.net)} net delayed by ${String(args.extra_s)} s for ${String(args.duration_s)} s${late}`;
-        case "planted_report": return `Planted ${String(args.template).toUpperCase()} from ${String(args.from_callsign)}, graded ${String(args.grade)}${late}`;
+        case "planted_report": return `Planted report (instructor inject): ${String(args.template).toUpperCase()} from ${String(args.from_callsign)}, graded ${String(args.grade)}${late}`;
         case "gnss_zone_add": return `GNSS spoofing zone ${String(args.id)} active${late}`;
         default: return `${String(d.kind)}${late}`;
       }
@@ -87,7 +98,7 @@ export function describe(e: DsEvent): string {
 
 function Decisions({ events }: { events: DsEvent[] }) {
   const orders = events.filter((e) => e.kind === "order_applied").slice().reverse();
-  if (!orders.length) return <p className="muted">No orders yet.</p>;
+  if (!orders.length) return <p className="muted">No orders yet. Each trainee order appears here with its stated confidence, the reports it cites and its rationale.</p>;
   return (
     <ol className="decisions" data-testid="ds-decisions">
       {orders.map((e) => {
@@ -96,7 +107,7 @@ function Decisions({ events }: { events: DsEvent[] }) {
         const planted = new Set((d.planted_refs as string[] | undefined) ?? []);
         return (
           <li key={String(d.msg)}>
-            <b>{e.clock}</b> {String(d.kind)} to {String(d.to)}
+            <b>{e.clock}</b> {orderName(String(d.kind))} to {String(d.to)}
             {d.confidence !== null && d.confidence !== undefined && <span className="conf">{String(d.confidence)}%</span>}
             {d.kind !== "TEXT" && (
               <div className="cited">Cited: {cited.length
@@ -195,7 +206,7 @@ export function DsApp() {
   const gnssCount = useRef(0);
   useEffect(() => { connect(); }, [connect]);
   const cfg = useMemo(() => hello && { bbox: hello.bbox, basemap_kind: hello.basemap_kind, places: hello.places, routes: hello.routes }, [hello]);
-  const { ref, map } = useKohraMap(cfg);
+  const { ref, map, ready } = useKohraMap(cfg);
 
   const setPick = (p: Pick | null) => { pickRef.current = p; setPickState(p); };
   const notify: Notify = (text, ok) => setNote({ text, ok });
@@ -255,7 +266,7 @@ export function DsApp() {
     setPoints(map, "truth", [
       ...state.units.filter((u) => u.strength > 0).map((u) => ({
         key: `u/${u.id}`, lonlat: u.lonlat, props: {},
-        img: unitImage(u.sidc, { uniqueDesignation: u.callsign || u.id, additionalInformation: `${Math.round(u.strength)}%` }),
+        img: unitImage(u.sidc, { uniqueDesignation: u.callsign || u.id, ...(u.strength < 99.5 ? { additionalInformation: `${Math.round(u.strength)}%` } : {}) }),
       })),
       ...state.jammers.map((j) => ({
         key: `j/${j.id}`, lonlat: j.lonlat, props: {}, opacity: j.active ? 1 : 0.4,
@@ -288,14 +299,15 @@ export function DsApp() {
         {hello?.synthetic && <span className="synthetic">SYNTHETIC TERRAIN</span>}
         {live?.endex && <span className="endex">ENDEX · {live.final_hash?.slice(0, 16)}</span>}
         {live?.endex && (
-          <a className="ctl aar" data-testid="ds-aar" href={`/api/ds/aar?t=${encodeURIComponent(token())}`} target="_blank" rel="noopener">
-            After-action review
-          </a>
+          <button type="button" className="ctl aar" data-testid="ds-aar" onClick={() => void openAar(notify)}>After-action review</button>
         )}
       </header>
       {error && hello && <div className="endex-banner warn">{error}</div>}
       <div className="ds-body">
-        <div ref={ref} className="map" />
+        <div className="map-wrap">
+          <div ref={ref} className="map" />
+          {!ready && <div className="map-loading">Loading terrain…</div>}
+        </div>
         <aside className="ds-side">
           {pick && <div className="pick-hint" data-testid="ds-pick-hint">Click the map to {pick.kind === "jammer_move" ? `move ${pick.id}` : pick.kind === "jammer_add" ? "place the jammer" : "centre the spoofing zone"}. Esc cancels.</div>}
           {note && <div className={`note ${note.ok ? "ok" : "bad"}`} data-testid="ds-note">{note.text}</div>}
@@ -314,7 +326,8 @@ export function DsApp() {
             <table className="links"><tbody>
               {live?.links.map((l) => (
                 <tr key={l.net + l.b}><td>{l.net}</td><td>{l.b}</td>
-                  <td style={{ color: sinrColour(l.sinr_db, live.theta_db), fontWeight: 600 }}>{l.sinr_db.toFixed(1)} dB</td></tr>
+                  <td style={{ color: sinrColour(l.sinr_db, live.theta_db), fontWeight: 600 }}>{sinrWord(l.sinr_db, live.theta_db)}</td>
+                  <td className="muted">{l.sinr_db.toFixed(1)} dB</td></tr>
               ))}
             </tbody></table>
           </details>

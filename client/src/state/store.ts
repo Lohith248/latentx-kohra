@@ -4,8 +4,25 @@ import type { DsHello, DsState, OrderResult, PlayerHello, Radio, Status } from "
 
 const RECONNECT_MS = 1500;
 
+const TOKEN_KEY = `kohra-token:${location.pathname}`;
+let cached: string | null = null;
+
+/** The link's ?t= token, read once and then removed from the address bar so it does not stay in history or
+ *  screenshots. Kept for this tab in sessionStorage so a reload still works. */
 export function token(): string {
-  return new URLSearchParams(location.search).get("t") ?? "";
+  if (cached !== null) return cached;
+  const params = new URLSearchParams(location.search);
+  const fromUrl = params.get("t");
+  let stored: string | null = null;
+  try { stored = sessionStorage.getItem(TOKEN_KEY); } catch { stored = null; }
+  cached = fromUrl ?? stored ?? "";
+  if (fromUrl !== null) {
+    try { sessionStorage.setItem(TOKEN_KEY, fromUrl); } catch { /* private mode: the token lives in memory only */ }
+    params.delete("t");
+    const q = params.toString();
+    history.replaceState(null, "", `${location.pathname}${q ? `?${q}` : ""}${location.hash}`);
+  }
+  return cached;
 }
 
 function wsUrl(path: string): string {

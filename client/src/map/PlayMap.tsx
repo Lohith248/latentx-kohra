@@ -13,7 +13,7 @@ export function PlayMap() {
   const picking = usePlayer((s) => s.picking);
   const grid = usePlayer((s) => s.draft.grid);
   const cfg = useMemo(() => hello && { bbox: hello.bbox, basemap_kind: hello.basemap_kind, places: hello.places, routes: hello.routes }, [hello]);
-  const { ref, map } = useKohraMap(cfg);
+  const { ref, map, ready } = useKohraMap(cfg);
   const pickingRef = useRef(picking);
   pickingRef.current = picking;
   // Re-render symbols on new traffic, and every 10 s of mission time so age stamps stay live.
@@ -70,5 +70,10 @@ export function PlayMap() {
 
   useEffect(() => { if (map) map.getCanvas().style.cursor = picking ? "crosshair" : ""; }, [map, picking]);
 
-  return <div ref={ref} className="map" data-testid="map" />;
+  return (
+    <div className="map-wrap">
+      <div ref={ref} className="map" data-testid="map" />
+      {!ready && <div className="map-loading" data-testid="map-loading">Loading terrain…</div>}
+    </div>
+  );
 }
